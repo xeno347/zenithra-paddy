@@ -1,46 +1,90 @@
-import React, { useMemo, useState } from "react";
+import React from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import DashboardPage from "../pages/DashboardPage";
 import OnboardingPage from "../pages/OnboardingPage";
+import AssetsPage from "../pages/Assets/AssetsPage";
+import OpexPage from "../pages/Opex/OpexPage";
+import ReportsPage from "../pages/Reports/ReportsPage";
+import SettingsPage from "../pages/Settings/SettingsPage";
 import { useCompanySession } from "./useCompanySession";
+import ErpLayout from "../layouts/ErpLayout";
+import RequirePermission from "./auth/RequirePermission";
+import { usePermissions } from "./auth/usePermissions";
+import { PERMISSIONS } from "./auth/permissions";
 
-function getInitialRoute() {
-  const hash = typeof window !== "undefined" ? window.location.hash : "";
-  const raw = hash.replace(/^#/, "");
-  if (raw.startsWith("/")) return raw;
-  return "/";
+function RequireCompany({ company, children }) {
+  if (!company) return <Navigate to="/onboarding" replace />;
+  return children;
+}
+
+function RedirectHome({ company }) {
+  return <Navigate to={company ? "/dashboard" : "/onboarding"} replace />;
 }
 
 export default function ErpShell() {
   const { company, ready, completeOnboarding, resetCompany } = useCompanySession();
-  const [route, setRoute] = useState(getInitialRoute);
-
-  const resolvedRoute = useMemo(() => {
-    if (route === "/" || !route) return company ? "/dashboard" : "/onboarding";
-    return route;
-  }, [route, company]);
+  const perms = usePermissions({ company });
 
   if (!ready) return null;
 
-  if (resolvedRoute === "/onboarding") {
-    return (
-      <OnboardingPage
-        onComplete={(data) => {
-          completeOnboarding(data);
-          setRoute("/dashboard");
-          if (typeof window !== "undefined") window.location.hash = "#/dashboard";
-        }}
-      />
-    );
-  }
-
   return (
-    <DashboardPage
-      company={company}
-      onReset={() => {
-        resetCompany();
-        setRoute("/onboarding");
-        if (typeof window !== "undefined") window.location.hash = "#/onboarding";
-      }}
-    />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<RedirectHome company={company} />} />
+
+        <Route
+          path="/onboarding"
+          element={<OnboardingPage onComplete={completeOnboarding} />}
+        />
+
+        <Route
+          element={
+            <RequireCompany company={company}>
+              <ErpLayout company={company} onReset={resetCompany} />
+            </RequireCompany>
+          }
+        >
+          <Route path="/dashboard" element={<DashboardPage company={company} onReset={resetCompany} />} />
+
+          <Route
+            path="/assets"
+            element={
+              <RequirePermission allow={perms.can(PERMISSIONS.VIEW_ASSETS)}>
+                <AssetsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="/opex"
+            element={
+              <RequirePermission allow={perms.can(PERMISSIONS.VIEW_OPEX)}>
+                <OpexPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="/reports"
+            element={
+              <RequirePermission allow={perms.can(PERMISSIONS.VIEW_REPORTS)}>
+                <ReportsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="/settings"
+            element={
+              <RequirePermission allow={perms.can(PERMISSIONS.MANAGE_SETTINGS)}>
+                <SettingsPage />
+              </RequirePermission>
+            }
+          />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

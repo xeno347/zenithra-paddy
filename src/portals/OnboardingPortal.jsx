@@ -67,6 +67,7 @@ export default function OnboardingPortal({ onComplete }) {
 
     onComplete?.({
       ...company,
+      role: "owner",
       registeredAt: new Date().toISOString(),
       opex: { labor: 1200, fuel: 650, maintenance: 250, loading: 300, misc: 150 },
       equipment: [{ id: crypto.randomUUID(), type: "Baler", capacity: 8, count: 2 }],
