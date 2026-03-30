@@ -7,6 +7,9 @@ import AccessChoicePage from "./pages/entry/AccessChoicePage";
 import LoginPage from "./pages/login/LoginPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import HrmsPage from "./pages/hrms/HrmsPage";
+import CollectionPlanningPage from "./pages/operations/CollectionPlanningPage";
+import FarmerPipelinePage from "./pages/operations/FarmerPipelinePage";
+import LiveTrackingPage from "./pages/operations/LiveTrackingPage";
 import { useCompanySession } from "./hooks/useCompanySession";
 import RequirePermission from "./context/auth/RequirePermission";
 import { usePermissions } from "./context/auth/usePermissions";
@@ -72,6 +75,21 @@ export default function App() {
                 <HrmsPage />
               </RequirePermission>
             }
+          />
+
+          <Route
+            path="/operations/collection-planning"
+            element={<CollectionPlanningPage />}
+          />
+
+          <Route
+            path="/operations/farmer-pipeline"
+            element={<FarmerPipelinePage />}
+          />
+
+          <Route
+            path="/operations/live-tracking"
+            element={<LiveTrackingPage />}
           />
 
           <Route

@@ -67,6 +67,29 @@ export default function ErpLayout({ company, onReset, onLogout }) {
               <Item to="/settings" icon={Settings} label="Settings" />
             </div>
 
+            <div className="mt-6">
+              <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                Operations Managment
+              </div>
+              <div className="space-y-1">
+                <Item
+                  to="/operations/collection-planning"
+                  icon={BarChart3}
+                  label="Collection planning"
+                />
+                <Item
+                  to="/operations/farmer-pipeline"
+                  icon={BarChart3}
+                  label="Farmer pipeline"
+                />
+                <Item
+                  to="/operations/live-tracking"
+                  icon={BarChart3}
+                  label="Live tracking"
+                />
+              </div>
+            </div>
+
             <div className="mt-4 border-t border-border pt-4">
               <button
                 onClick={onLogout}

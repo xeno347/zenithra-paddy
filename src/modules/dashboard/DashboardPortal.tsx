@@ -1,24 +1,27 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
+import { Activity, TrendingUp, Users, Truck, Clock, ArrowRight, Zap, Target, DollarSign, Briefcase } from "lucide-react";
 import {
-  Activity,
-  Calendar,
-  CheckCircle2,
-  Fuel,
-  Gauge,
-  Leaf,
-  LogOut,
-  BarChart3,
-} from "lucide-react";
-import {
-  Area,
-  AreaChart,
   CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { Link } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import * as L from "leaflet";
+
+// Fix default icon paths in leaflet using vite/webpack
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
 
 function cx(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -28,7 +31,7 @@ function Card({ className = "", children }: { className?: string; children: Reac
   return (
     <section
       className={cx(
-        "rounded-2xl border border-border bg-white shadow-soft",
+        "rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md",
         className
       )}
     >
@@ -37,233 +40,506 @@ function Card({ className = "", children }: { className?: string; children: Reac
   );
 }
 
-function ProgressBar({ value = 0.6 }) {
-  const pct = Math.max(0, Math.min(1, value));
+function KpiCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  trend = "up"
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+  icon: React.ElementType;
+  trend?: "up" | "down" | "neutral"
+}) {
   return (
-    <div className="h-2 w-full rounded-full bg-slate-100">
-      <div
-        className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
-        style={{ width: `${pct * 100}%` }}
-      />
-    </div>
-  );
-}
-
-function GaugeRing({ value = 0.72 }) {
-  const pct = Math.max(0, Math.min(1, value));
-  const dash = 2 * Math.PI * 18;
-  const dashOffset = dash * (1 - pct);
-  const status = pct >= 0.85 ? "Working Systematically" : pct >= 0.7 ? "On Track" : "At Risk";
-  const color = pct >= 0.85 ? "#1aa85a" : pct >= 0.7 ? "#f59e0b" : "#ef4444";
-
-  return (
-    <div className="flex items-center gap-4 text-slate-800">
-      <div className="relative h-16 w-16">
-        <svg viewBox="0 0 44 44" className="h-16 w-16 -rotate-90">
-          <circle cx="22" cy="22" r="18" fill="none" stroke="#e6edf7" strokeWidth="6" />
-          <circle
-            cx="22"
-            cy="22"
-            r="18"
-            fill="none"
-            stroke={color}
-            strokeWidth="6"
-            strokeLinecap="round"
-            strokeDasharray={dash}
-            strokeDashoffset={dashOffset}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-slate-800">
-          {Math.round(pct * 100)}%
-        </div>
-      </div>
-      <div>
-        <div className="text-xs text-slate-500">OPEX Health</div>
-        <div className="mt-0.5 text-sm font-semibold text-slate-900">{status}</div>
-      </div>
-    </div>
-  );
-}
-
-export default function DashboardPortal({ company, onReset }) {
-  const dailyData = useMemo(
-    () => [
-      { day: "Mon", tons: 18 },
-      { day: "Tue", tons: 24 },
-      { day: "Wed", tons: 21 },
-      { day: "Thu", tons: 29 },
-      { day: "Fri", tons: 26 },
-      { day: "Sat", tons: 31 },
-      { day: "Sun", tons: 22 },
-    ],
-    []
-  );
-
-  const expected = (company?.targetTonnage || 170) * 7;
-  const actual = dailyData.reduce((a, d) => a + d.tons, 0);
-  const ratio = actual / expected;
-
-  const liveFeed = [
-    { t: "08:12", title: "Baler #2", desc: "Cycle started — Field 14", icon: Leaf },
-    { t: "09:05", title: "Fuel", desc: `Spent $${company?.opex?.fuel || 94} — refill`, icon: Fuel },
-    { t: "10:22", title: "QC", desc: "Moisture check passed", icon: CheckCircle2 },
-  ];
-
-  return (
-    <div className="h-full text-slate-900">
-      <header className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-border bg-white px-4 py-3 shadow-soft xl:px-8">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
-            <Leaf className="h-5 w-5" />
+    <Card className="relative overflow-hidden">
+      <div className="absolute right-0 top-0 h-24 w-24 -translate-y-8 translate-x-8 rounded-full bg-slate-50 opacity-50" />
+      <div className="relative p-6">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium text-slate-500">{label}</div>
+          <div className="flex p-2 rounded-xl bg-slate-50/80 text-slate-600 border border-slate-100">
+            <Icon className="h-4 w-4" />
           </div>
+        </div>
+        <div className="mt-4 flex items-baseline gap-2">
+          <div className="text-3xl font-bold tracking-tight text-slate-900">{value}</div>
+        </div>
+        {hint ? (
+          <div className="mt-4 flex items-center gap-1.5">
+            <span className={cx(
+              "px-1.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider",
+              trend === "up" ? "bg-emerald-50 text-emerald-600" :
+              trend === "down" ? "bg-rose-50 text-rose-600" :
+              "bg-slate-100 text-slate-600"
+            )}>
+              {trend === "up" ? "+12%" : trend === "down" ? "-4%" : "Avg"}
+            </span>
+            <span className="text-xs text-slate-500">{hint}</span>
+          </div>
+        ) : null}
+      </div>
+    </Card>
+  );
+}
+type Company = {
+  operatorName?: string;
+  siteName?: string;
+  role?: string;
+  targetTonnage?: number;
+  equipment?: Array<{
+    id?: string;
+    type?: string;
+    capacity?: number;
+    count?: number;
+  }>;
+  opex?: {
+    labor?: number;
+    fuel?: number;
+    maintenance?: number;
+    loading?: number;
+    misc?: number;
+  };
+};
+
+export default function DashboardPortal({ company, onReset }: { company?: Company; onReset?: () => void }) {
+  const dates = useMemo(() => {
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    const fmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "2-digit" });
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(base);
+      d.setDate(base.getDate() - (6 - i));
+      return fmt.format(d);
+    });
+  }, []);
+
+  const paddyData = useMemo(
+    () =>
+      [18, 24, 21, 29, 26, 31, 22].map((tons, idx) => ({
+        date: dates[idx],
+        tons,
+      })),
+    [dates]
+  );
+
+  const totalCollected = paddyData.reduce((sum, d) => sum + d.tons, 0);
+
+  const opexSeries = useMemo(() => {
+    const labor = Number(company?.opex?.labor ?? 1200);
+    const fuel = Number(company?.opex?.fuel ?? 650);
+    const maintenance = Number(company?.opex?.maintenance ?? 250);
+    const fleet = Number(company?.opex?.loading ?? 300) + Number(company?.opex?.misc ?? 150);
+
+    const factors = [0.92, 1.03, 0.88, 1.09, 1.01, 0.95, 1.06];
+
+    const data = dates.map((date, idx) => {
+      const f = factors[idx % factors.length];
+      const hr = Math.max(0, Math.round((labor / 7) * f));
+      const flt = Math.max(0, Math.round((fleet / 7) * (0.95 + (f - 1) * 0.6)));
+      const fFuel = Math.max(0, Math.round((fuel / 7) * (0.9 + (f - 1) * 0.9)));
+      const maint = Math.max(0, Math.round((maintenance / 7) * (0.97 + (f - 1) * 0.5)));
+      return { date, hr, fleet: flt, fuel: fFuel, maintenance: maint };
+    });
+
+    function avgOf(key: "hr" | "fleet" | "fuel" | "maintenance") {
+      return data.reduce((sum, d) => sum + d[key], 0) / Math.max(1, data.length);
+    }
+
+    const thresholds = {
+      hr: Math.round(avgOf("hr") * 1.1),
+      fleet: Math.round(avgOf("fleet") * 1.1),
+      fuel: Math.round(avgOf("fuel") * 1.1),
+      maintenance: Math.round(avgOf("maintenance") * 1.1),
+    };
+
+    return { data, thresholds };
+  }, [company, dates]);
+
+  const tooltipStyle: React.CSSProperties = {
+    background: "rgba(255, 255, 255, 0.96)",
+    border: "1px solid rgba(148,163,184,0.45)",
+    borderRadius: 12,
+    color: "#0f172a",
+  };
+
+  const farmsCount = useMemo(() => {
+    const seed = `${company?.operatorName ?? ""}|${company?.siteName ?? ""}`;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i += 1) {
+      hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+    }
+    return (hash % 18) + 6;
+  }, [company?.operatorName, company?.siteName]);
+
+  const equipmentCount = useMemo(() => {
+    return (company?.equipment ?? []).reduce((sum, e) => sum + Number(e?.count ?? 0), 0);
+  }, [company?.equipment]);
+
+  const optimizationCapacityPct = useMemo(() => {
+    const target = Number(company?.targetTonnage ?? 0);
+    const capacityPerCycle = (company?.equipment ?? []).reduce((sum, e) => {
+      return sum + Number(e?.capacity ?? 0) * Number(e?.count ?? 0);
+    }, 0);
+
+    if (!target || !capacityPerCycle) return 72;
+    return Math.max(0, Math.min(100, Math.round((capacityPerCycle / target) * 100)));
+  }, [company?.equipment, company?.targetTonnage]);
+
+  const operationalStrength = useMemo(() => {
+    const base = farmsCount * 6 + equipmentCount * 8;
+    return Math.max(10, Math.round(base));
+  }, [equipmentCount, farmsCount]);
+
+  const estimatedMoneySaved = useMemo(() => {
+    const weeklyOpex =
+      Number(company?.opex?.labor ?? 0) +
+      Number(company?.opex?.fuel ?? 0) +
+      Number(company?.opex?.maintenance ?? 0) +
+      Number(company?.opex?.loading ?? 0) +
+      Number(company?.opex?.misc ?? 0);
+
+    const estimated = weeklyOpex * (optimizationCapacityPct / 100) * 0.06;
+    return Math.max(0, Math.round(estimated));
+  }, [company?.opex, optimizationCapacityPct]);
+
+  const money = useMemo(() => {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    });
+  }, []);
+
+  return (
+    <div className="min-h-full bg-slate-50/50 pb-12 pt-8 text-slate-900">
+      <main className="mx-auto w-full px-4 sm:px-6 lg:px-8 2xl:px-12">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="text-sm font-semibold text-slate-900">Zenithra Paddy</div>
-            <div className="text-xs text-slate-500">{company?.operatorName}</div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Operational Dashboard</h1>
+            <p className="mt-1 text-sm text-slate-500">Live metrics & OPEX tracking across your paddy collection sites</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+            >
+              Change Site
+            </Link>
+            <button
+              onClick={onReset}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+            >
+              New Initialization
+            </button>
           </div>
         </div>
 
-        <div className="hidden md:block flex-1 max-w-xl">
-          <div className="relative">
-            <input
-              className="w-full rounded-xl border border-border bg-slate-50 px-10 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-blue-100"
-              placeholder="Search ops, equipment, cycles..."
-            />
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-              <Activity className="h-4 w-4" />
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KpiCard label="Farms Covered" value={farmsCount} hint="Active points" icon={Target} trend="up" />
+          <KpiCard label="Operational Strength" value={operationalStrength} hint="Est. manpower" icon={Users} trend="up" />
+          <KpiCard label="Optimization" value={`${optimizationCapacityPct}%`} hint="Utilization" icon={Zap} trend="neutral" />
+          <KpiCard label="Money Saved" value={money.format(estimatedMoneySaved)} hint="WTD savings" icon={DollarSign} trend="up" />
+        </div>
+
+        <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-12">
+          {/* Quick Actions (Left Column) */}
+          <div className="xl:col-span-3 flex flex-col">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-slate-900">Quick Actions</h2>
+              <Link to="/settings" className="text-sm font-medium text-blue-600 hover:text-blue-700">All</Link>
             </div>
+            <div className="flex flex-col gap-3 flex-grow">
+              <Link
+                to="/dashboard"
+                className="group flex flex-col justify-center flex-grow rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-md"
+              >
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <Briefcase className="h-5 w-5" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-900">Current Operations</span>
+                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-1" />
+                </div>
+              </Link>
+              <Link
+                to="/hrms#fleet"
+                className="group flex flex-col justify-center flex-grow rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-violet-200 hover:bg-violet-50/50 hover:shadow-md"
+              >
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-colors">
+                  <Truck className="h-5 w-5" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-900">Fleet Management</span>
+                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-violet-600 transition-transform group-hover:translate-x-1" />
+                </div>
+              </Link>
+              <Link
+                to="/hrms#attendance"
+                className="group flex flex-col justify-center flex-grow rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-md"
+              >
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-900">Team Attendance</span>
+                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-emerald-600 transition-transform group-hover:translate-x-1" />
+                </div>
+              </Link>
+            </div>
+          </div>
+
+          {/* Total Paddy Collected (Right Column) */}
+          <div className="xl:col-span-9 flex flex-col pt-10 xl:pt-0">
+            <div className="mb-4 xl:hidden">
+              <h2 className="text-base font-semibold text-slate-900">Total Paddy Collected</h2>
+            </div>
+            <Card className="flex-grow flex flex-col h-full">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/50 px-6 py-5 rounded-t-2xl">
+                <div>
+                  <h3 className="font-semibold text-slate-900">Total Paddy Collected</h3>
+                  <p className="mt-1 text-sm text-slate-500">Weekly tonnage yield across all active sites</p>
+                </div>
+                <div className="text-right flex flex-col items-end">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    +14%
+                  </div>
+                  <div className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{totalCollected}t</div>
+                </div>
+              </div>
+
+              <div className="px-4 py-6 flex-grow min-h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={paddyData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="rgba(15,23,42,0.08)" vertical={false} />
+                    <XAxis dataKey="date" stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} />
+                    <YAxis stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} width={40} />
+                    <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "rgba(15, 23, 42, 0.7)" }} />
+                    <Line type="monotone" dataKey="tons" name="Tons" stroke="#1aa85a" strokeWidth={2.5} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            to="/"
-            className="inline-flex items-center rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            Back to selection
-          </Link>
-          <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white text-slate-500 hover:bg-slate-50">
-            <Calendar className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onReset}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            <LogOut className="h-4 w-4" />
-            New site
-          </button>
-        </div>
-      </header>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+          <div className="xl:col-span-8 flex flex-col">
+            <div className="mb-4">
+              <h2 className="text-base font-semibold text-slate-900">OPEX Distribution Analysis</h2>
+              <p className="mt-1 text-sm text-slate-500">Resource utilization vs estimated thresholds</p>
+            </div>
 
-      <main className="mx-auto max-w-6xl px-4 pb-6 xl:px-8">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card>
-            <div className="p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-xs text-slate-500">OPEX Health</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900">System status</div>
-                </div>
-                <Gauge className="h-5 w-5 text-slate-400" />
-              </div>
-              <div className="mt-4">
-                <GaugeRing value={0.86} />
-              </div>
-            </div>
-          </Card>
-
-          <Card>
-            <div className="p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-xs text-slate-500">Output vs Target</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900">Expected {expected}t</div>
-                </div>
-                <BarChart3 className="h-5 w-5 text-slate-400" />
-              </div>
-              <div className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">{actual}t</div>
-              <div className="mt-3">
-                <ProgressBar value={ratio} />
-              </div>
-              <div className="mt-2 text-xs text-slate-500">{Math.round(ratio * 100)}% achieved</div>
-            </div>
-          </Card>
-
-          <Card>
-            <div className="p-5">
-              <div className="text-xs text-slate-500">Active Site</div>
-              <div className="mt-1 text-sm font-semibold text-slate-900">{company?.siteName}</div>
-              <div className="mt-3 text-xs text-slate-500">
-                Target: {company?.targetTonnage}t/cycle
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-12">
-          <Card className="xl:col-span-9">
-            <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
-              <div>
-                <div className="text-sm font-semibold text-slate-900">Daily Tonnage Graph</div>
-                <div className="mt-0.5 text-xs text-slate-500">Last 7 days</div>
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
-                <Activity className="h-4 w-4" /> Live
-              </div>
-            </div>
-            <div className="h-72 px-2 py-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={dailyData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="tonsFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#2f80ed" stopOpacity={0.38} />
-                      <stop offset="100%" stopColor="#2f80ed" stopOpacity={0.06} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="#e8eef8" vertical={false} />
-                  <XAxis dataKey="day" stroke="#7a8da9" tickLine={false} axisLine={false} />
-                  <YAxis stroke="#7a8da9" tickLine={false} axisLine={false} width={30} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "#ffffff",
-                      border: "1px solid #dbe5f3",
-                      borderRadius: 12,
-                      color: "#0f172a",
-                    }}
-                    labelStyle={{ color: "#6b7280" }}
-                  />
-                  <Area type="monotone" dataKey="tons" stroke="#2f80ed" strokeWidth={2.5} fill="url(#tonsFill)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-
-          <Card className="xl:col-span-3">
-            <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
-              <div>
-                <div className="text-sm font-semibold text-slate-900">Live Feed</div>
-                <div className="mt-0.5 text-xs text-slate-500">Recent activity</div>
-              </div>
-            </div>
-            <div className="p-5 space-y-4">
-              {liveFeed.map((it, i) => {
-                const Icon = it.icon;
-                return (
-                  <div key={i} className="flex items-start gap-3 rounded-xl bg-slate-50 p-3">
-                    <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-                      <Icon className="h-4 w-4" />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 flex-grow">
+              <Card className="flex flex-col h-full">
+                <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50 px-5 py-4 rounded-t-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-indigo-100 p-2 text-indigo-600">
+                      <Users className="h-4 w-4" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-xs font-semibold text-slate-900">{it.title}</div>
-                        <div className="text-[11px] text-slate-500">{it.t}</div>
-                      </div>
-                      <div className="mt-1 text-xs text-slate-500">{it.desc}</div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Human Resources</div>
+                      <div className="mt-0.5 text-xs text-slate-500">Daily cost map</div>
                     </div>
                   </div>
-                );
-              })}
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Target Ceiling</div>
+                    <div className="mt-1 text-sm font-bold text-slate-700">
+                      ${opexSeries.thresholds.hr}
+                    </div>
+                  </div>
+                </div>
+                <div className="h-56 px-2 py-5 flex-grow">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={opexSeries.data} margin={{ top: 10, right: 18, left: 0, bottom: 0 }}>
+                      <CartesianGrid stroke="rgba(15,23,42,0.08)" vertical={false} />
+                      <XAxis dataKey="date" stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} />
+                      <YAxis stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} width={40} />
+                      <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "rgba(15, 23, 42, 0.7)" }} />
+                      <ReferenceLine y={opexSeries.thresholds.hr} stroke="rgba(15,23,42,0.35)" strokeDasharray="6 4" />
+                      <Line type="monotone" dataKey="hr" name="Human resources" stroke="#4c5a8b" strokeWidth={2.25} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              <Card className="flex flex-col h-full">
+                <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50 px-5 py-4 rounded-t-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-violet-100 p-2 text-violet-600">
+                      <Truck className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Fleet Operations</div>
+                      <div className="mt-0.5 text-xs text-slate-500">Daily cost map</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Target Ceiling</div>
+                    <div className="mt-1 text-sm font-bold text-slate-700">
+                      ${opexSeries.thresholds.fleet}
+                    </div>
+                  </div>
+                </div>
+                <div className="h-56 px-2 py-5 flex-grow">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={opexSeries.data} margin={{ top: 10, right: 18, left: 0, bottom: 0 }}>
+                      <CartesianGrid stroke="rgba(15,23,42,0.08)" vertical={false} />
+                      <XAxis dataKey="date" stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} />
+                      <YAxis stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} width={40} />
+                      <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "rgba(15, 23, 42, 0.7)" }} />
+                      <ReferenceLine y={opexSeries.thresholds.fleet} stroke="rgba(15,23,42,0.35)" strokeDasharray="6 4" />
+                      <Line type="monotone" dataKey="fleet" name="Fleet" stroke="#6072aa" strokeWidth={2.25} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              <Card className="flex flex-col h-full">
+                <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50 px-5 py-4 rounded-t-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-orange-100 p-2 text-orange-600">
+                      <Zap className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Fuel Consumption</div>
+                      <div className="mt-0.5 text-xs text-slate-500">Daily cost map</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Target Ceiling</div>
+                    <div className="mt-1 text-sm font-bold text-slate-700">
+                      ${opexSeries.thresholds.fuel}
+                    </div>
+                  </div>
+                </div>
+                <div className="h-56 px-2 py-5 flex-grow">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={opexSeries.data} margin={{ top: 10, right: 18, left: 0, bottom: 0 }}>
+                      <CartesianGrid stroke="rgba(15,23,42,0.08)" vertical={false} />
+                      <XAxis dataKey="date" stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} />
+                      <YAxis stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} width={40} />
+                      <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "rgba(15, 23, 42, 0.7)" }} />
+                      <ReferenceLine y={opexSeries.thresholds.fuel} stroke="rgba(15,23,42,0.35)" strokeDasharray="6 4" />
+                      <Line type="monotone" dataKey="fuel" name="Fuel" stroke="#1aa85a" strokeWidth={2.25} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              <Card className="flex flex-col h-full">
+                <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50 px-5 py-4 rounded-t-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-sky-100 p-2 text-sky-600">
+                      <Target className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Maintenance</div>
+                      <div className="mt-0.5 text-xs text-slate-500">Daily cost map</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Target Ceiling</div>
+                    <div className="mt-1 text-sm font-bold text-slate-700">
+                      ${opexSeries.thresholds.maintenance}
+                    </div>
+                  </div>
+                </div>
+                <div className="h-56 px-2 py-5 flex-grow">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={opexSeries.data} margin={{ top: 10, right: 18, left: 0, bottom: 0 }}>
+                      <CartesianGrid stroke="rgba(15,23,42,0.08)" vertical={false} />
+                      <XAxis dataKey="date" stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} />
+                      <YAxis stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} width={40} />
+                      <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "rgba(15, 23, 42, 0.7)" }} />
+                      <ReferenceLine y={opexSeries.thresholds.maintenance} stroke="rgba(15,23,42,0.35)" strokeDasharray="6 4" />
+                      <Line type="monotone" dataKey="maintenance" name="Maintenance" stroke="#94a3b8" strokeWidth={2.25} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
             </div>
-          </Card>
+          </div>
+
+          <div className="xl:col-span-4 flex flex-col">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-slate-900">Live Operations Map</h2>
+                <p className="mt-1 text-sm text-slate-500">Fleet and personnel locations</p>
+              </div>
+              <button className="text-xs font-semibold text-blue-600 hover:text-blue-700">Expand</button>
+            </div>
+            
+            <Card className="flex-grow flex flex-col relative overflow-hidden bg-slate-50 min-h-[400px]">
+              <div className="flex-grow relative z-10 w-full h-full min-h-[350px]">
+                <MapContainer center={[21.2514, 81.6296]} zoom={11} style={{ height: "100%", width: "100%" }}>
+                  <TileLayer
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                    attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                  />
+                  
+                  {/* Sites */}
+                  <CircleMarker center={[21.28, 81.65]} radius={8} pathOptions={{ color: '#10b981', fillColor: '#10b981', fillOpacity: 0.8 }}>
+                    <Popup>
+                      <div className="text-sm font-semibold">Site A (Active)</div>
+                    </Popup>
+                  </CircleMarker>
+                  <CircleMarker center={[21.22, 81.61]} radius={8} pathOptions={{ color: '#10b981', fillColor: '#10b981', fillOpacity: 0.8 }}>
+                    <Popup>
+                      <div className="text-sm font-semibold">Site B (Active)</div>
+                    </Popup>
+                  </CircleMarker>
+
+                  {/* Fleet */}
+                  <CircleMarker center={[21.24, 81.67]} radius={6} pathOptions={{ color: '#8b5cf6', fillColor: '#8b5cf6', fillOpacity: 0.8 }}>
+                    <Popup>
+                      <div className="text-sm font-semibold">Fleet #4</div>
+                      <div className="text-xs text-slate-500">In Transit</div>
+                    </Popup>
+                  </CircleMarker>
+                  <CircleMarker center={[21.26, 81.59]} radius={6} pathOptions={{ color: '#8b5cf6', fillColor: '#8b5cf6', fillOpacity: 0.8 }}>
+                    <Popup>
+                      <div className="text-sm font-semibold">Fleet #2</div>
+                      <div className="text-xs text-slate-500">Loading</div>
+                    </Popup>
+                  </CircleMarker>
+
+                  {/* Personnel */}
+                  <CircleMarker center={[21.25, 81.63]} radius={5} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.8 }}>
+                    <Popup>
+                      <div className="text-sm font-semibold">Team Alpha</div>
+                    </Popup>
+                  </CircleMarker>
+                  <CircleMarker center={[21.21, 81.65]} radius={5} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.8 }}>
+                    <Popup>
+                      <div className="text-sm font-semibold">Team Beta</div>
+                    </Popup>
+                  </CircleMarker>
+                </MapContainer>
+              </div>
+
+              {/* Map Legend */}
+              <div className="relative z-20 bg-white/90 backdrop-blur-md border-t border-slate-200 p-4">
+                <div className="flex items-center justify-between text-xs font-medium text-slate-600">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100"></span> 
+                    <span>Sites (6)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2.5 w-2.5 rounded-full bg-violet-500 ring-2 ring-violet-100"></span> 
+                    <span>Fleet (12)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-blue-100"></span> 
+                    <span>Personnel (4)</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       </main>
     </div>
