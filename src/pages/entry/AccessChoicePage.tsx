@@ -11,15 +11,18 @@ export default function AccessChoicePage({ hasCompany }: AccessChoicePageProps) 
     <div className="min-h-screen bg-background px-4 py-10">
       <main className="mx-auto w-full max-w-5xl">
         <header className="text-center">
-          <h1 className="text-3xl font-bold text-slate-900 md:text-4xl">Zenithra Paddy ERP</h1>
+          <div className="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            Welcome
+          </div>
+          <h1 className="mt-3 text-3xl font-bold text-slate-900 md:text-4xl">Zenithra Paddy ERP</h1>
           <p className="mt-3 text-sm text-slate-600 md:text-base">
             Select how you want to continue.
           </p>
         </header>
 
         <section className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
-          <article className="rounded-2xl border border-border bg-white p-6 shadow-soft">
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white">
+          <article className="surface-glass rounded-3xl border border-border p-6 shadow-soft">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-emerald-500 text-white shadow-soft">
               <LogIn className="h-5 w-5" />
             </div>
             <h2 className="mt-4 text-lg font-semibold text-slate-900">Login to Dashboard</h2>
@@ -33,14 +36,14 @@ export default function AccessChoicePage({ hasCompany }: AccessChoicePageProps) 
             </p>
             <Link
               to={hasCompany ? "/login" : "/onboarding"}
-              className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-primary to-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:opacity-90"
             >
               {hasCompany ? "Go to Login" : "Continue to Onboarding"}
             </Link>
           </article>
 
-          <article className="rounded-2xl border border-border bg-white p-6 shadow-soft">
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white">
+          <article className="surface-glass rounded-3xl border border-border p-6 shadow-soft">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 to-slate-700 text-white shadow-soft">
               <Building2 className="h-5 w-5" />
             </div>
             <h2 className="mt-4 text-lg font-semibold text-slate-900">Company Registration</h2>
@@ -49,7 +52,7 @@ export default function AccessChoicePage({ hasCompany }: AccessChoicePageProps) 
             </p>
             <Link
               to="/onboarding"
-              className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-slate-800"
             >
               Go to Registration
             </Link>

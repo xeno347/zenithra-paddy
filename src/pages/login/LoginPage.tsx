@@ -29,12 +29,12 @@ export default function LoginPage({ hasCompany, onLogin }: LoginPageProps) {
   return (
     <div className="min-h-screen bg-background px-4 py-10">
       <main className="mx-auto w-full max-w-md">
-        <div className="rounded-2xl border border-border bg-white p-6 shadow-soft">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-white">
+        <div className="surface-glass rounded-3xl border border-border p-6 shadow-soft">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-emerald-600 text-white shadow-soft">
             <LogIn className="h-5 w-5" />
           </div>
 
-          <h1 className="mt-4 text-xl font-semibold text-slate-900">Dashboard Login</h1>
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">Dashboard Login</h1>
           <p className="mt-1 text-sm text-slate-600">
             Use the login ID and password generated after onboarding.
           </p>
@@ -45,7 +45,7 @@ export default function LoginPage({ hasCompany, onLogin }: LoginPageProps) {
               <div className="mt-3">
                 <Link
                   to="/onboarding"
-                  className="inline-flex rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:opacity-90"
+                  className="inline-flex rounded-lg bg-gradient-to-r from-primary to-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-soft hover:opacity-90"
                 >
                   Go to onboarding
                 </Link>
@@ -59,7 +59,7 @@ export default function LoginPage({ hasCompany, onLogin }: LoginPageProps) {
                   value={loginId}
                   onChange={(e) => setLoginId(e.target.value)}
                   placeholder="Enter login ID"
-                  className="mt-1 w-full rounded-xl border border-border px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-4 focus:ring-blue-100"
+                  className="mt-1 w-full rounded-xl border border-border bg-white/90 px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-4 focus:ring-emerald-100"
                 />
               </label>
 
@@ -71,7 +71,7 @@ export default function LoginPage({ hasCompany, onLogin }: LoginPageProps) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter password"
-                    className="w-full rounded-xl border border-border px-3 py-2 pr-10 text-sm text-slate-900 outline-none focus:border-primary focus:ring-4 focus:ring-blue-100"
+                    className="w-full rounded-xl border border-border bg-white/90 px-3 py-2 pr-10 text-sm text-slate-900 outline-none focus:border-primary focus:ring-4 focus:ring-emerald-100"
                   />
                   <KeyRound className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-slate-400" />
                 </div>
@@ -81,7 +81,7 @@ export default function LoginPage({ hasCompany, onLogin }: LoginPageProps) {
 
               <button
                 type="submit"
-                className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+                className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-primary to-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:opacity-90"
               >
                 Login to dashboard
               </button>

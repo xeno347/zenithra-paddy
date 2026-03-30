@@ -48,8 +48,8 @@ function Input(props: InputHTMLAttributes<HTMLInputElement>) {
     <input
       {...props}
       className={cx(
-        "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400",
-        "shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-blue-100",
+        "w-full rounded-xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400",
+        "shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-emerald-100",
         props.className
       )}
     />
@@ -82,9 +82,9 @@ function Button({
     <button
       {...props}
       className={cx(
-        "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold",
-        "bg-primary text-white shadow-sm hover:opacity-90",
-        "focus:outline-none focus:ring-4 focus:ring-blue-100",
+        "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold",
+        "bg-gradient-to-r from-primary to-emerald-600 text-white shadow-soft hover:opacity-90",
+        "focus:outline-none focus:ring-4 focus:ring-emerald-100",
         loading && "opacity-80",
         className
       )}
@@ -151,10 +151,10 @@ export default function OnboardingPortal({ onComplete }: OnboardingPortalProps) 
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-white/90 px-4 py-4 backdrop-blur">
+      <header className="surface-glass border-b border-border px-4 py-4">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-white shadow-soft">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-emerald-500 text-white shadow-soft">
               <Leaf className="h-6 w-6" />
             </div>
             <div>
@@ -164,7 +164,7 @@ export default function OnboardingPortal({ onComplete }: OnboardingPortalProps) 
           </div>
           <Link
             to="/"
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
           >
             Back to selection
           </Link>
@@ -173,7 +173,7 @@ export default function OnboardingPortal({ onComplete }: OnboardingPortalProps) 
 
       <main className="mx-auto max-w-4xl px-4 py-8">
         {issuedCredentials ? (
-          <div className="rounded-2xl border border-border bg-white p-6 shadow-soft">
+          <div className="surface-glass rounded-3xl border border-border p-6 shadow-soft">
             <h1 className="text-xl font-semibold text-slate-900">Onboarding complete</h1>
             <p className="mt-2 text-sm text-slate-600">
               Use these credentials to log in to the dashboard.
@@ -193,14 +193,14 @@ export default function OnboardingPortal({ onComplete }: OnboardingPortalProps) 
             <div className="mt-5">
               <Link
                 to="/login"
-                className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-primary to-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:opacity-90"
               >
                 Continue to login
               </Link>
             </div>
           </div>
         ) : (
-        <div className="rounded-2xl border border-border bg-white p-6 shadow-soft">
+        <div className="surface-glass rounded-3xl border border-border p-6 shadow-soft">
           <h1 className="text-xl font-semibold text-slate-900">Register & onboard</h1>
           <p className="mt-1 text-sm text-slate-600">
             Complete registration, Assets, OPEX, and Reports setup to get your dashboard login.

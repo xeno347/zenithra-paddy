@@ -31,7 +31,7 @@ function Card({ className = "", children }: { className?: string; children: Reac
   return (
     <section
       className={cx(
-        "rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md",
+        "rounded-md border border-slate-200 bg-white shadow-soft transition-all",
         className
       )}
     >
@@ -54,20 +54,19 @@ function KpiCard({
   trend?: "up" | "down" | "neutral"
 }) {
   return (
-    <Card className="relative overflow-hidden">
-      <div className="absolute right-0 top-0 h-24 w-24 -translate-y-8 translate-x-8 rounded-full bg-slate-50 opacity-50" />
-      <div className="relative p-6">
+    <Card>
+      <div className="p-4">
         <div className="flex items-center justify-between">
           <div className="text-sm font-medium text-slate-500">{label}</div>
-          <div className="flex p-2 rounded-xl bg-slate-50/80 text-slate-600 border border-slate-100">
+          <div className="flex rounded-md bg-slate-100 p-2 text-slate-600 border border-slate-200">
             <Icon className="h-4 w-4" />
           </div>
         </div>
-        <div className="mt-4 flex items-baseline gap-2">
-          <div className="text-3xl font-bold tracking-tight text-slate-900">{value}</div>
+        <div className="mt-2 flex items-baseline gap-2">
+          <div className="text-2xl font-bold text-slate-900">{value}</div>
         </div>
         {hint ? (
-          <div className="mt-4 flex items-center gap-1.5">
+          <div className="mt-2 flex items-center gap-1.5">
             <span className={cx(
               "px-1.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider",
               trend === "up" ? "bg-emerald-50 text-emerald-600" :
@@ -213,38 +212,38 @@ export default function DashboardPortal({ company, onReset }: { company?: Compan
   }, []);
 
   return (
-    <div className="min-h-full bg-slate-50/50 pb-12 pt-8 text-slate-900">
+    <div className="min-h-full bg-background pb-8 pt-4 text-slate-900">
       <main className="mx-auto w-full px-4 sm:px-6 lg:px-8 2xl:px-12">
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Operational Dashboard</h1>
-            <p className="mt-1 text-sm text-slate-500">Live metrics & OPEX tracking across your paddy collection sites</p>
+            <h1 className="text-3xl font-semibold text-slate-800">Dashboard v3</h1>
+            <p className="mt-1 text-sm text-slate-500">Operational metrics and OPEX tracking</p>
           </div>
 
           <div className="flex items-center gap-3">
             <Link
               to="/"
-              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-soft transition-colors hover:bg-slate-50"
             >
               Change Site
             </Link>
             <button
               onClick={onReset}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:opacity-90"
             >
               New Initialization
             </button>
           </div>
         </div>
 
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard label="Farms Covered" value={farmsCount} hint="Active points" icon={Target} trend="up" />
           <KpiCard label="Operational Strength" value={operationalStrength} hint="Est. manpower" icon={Users} trend="up" />
           <KpiCard label="Optimization" value={`${optimizationCapacityPct}%`} hint="Utilization" icon={Zap} trend="neutral" />
           <KpiCard label="Money Saved" value={money.format(estimatedMoneySaved)} hint="WTD savings" icon={DollarSign} trend="up" />
         </div>
 
-        <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-12">
           {/* Quick Actions (Left Column) */}
           <div className="xl:col-span-3 flex flex-col">
             <div className="mb-4 flex items-center justify-between">
@@ -254,38 +253,38 @@ export default function DashboardPortal({ company, onReset }: { company?: Compan
             <div className="flex flex-col gap-3 flex-grow">
               <Link
                 to="/dashboard"
-                className="group flex flex-col justify-center flex-grow rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-md"
+                className="group flex flex-col justify-center flex-grow rounded-md border border-slate-200 bg-white p-4 shadow-soft transition-all hover:bg-slate-50"
               >
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-primary transition-colors">
                   <Briefcase className="h-5 w-5" />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-900">Current Operations</span>
-                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-1" />
                 </div>
               </Link>
               <Link
                 to="/hrms#fleet"
-                className="group flex flex-col justify-center flex-grow rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-violet-200 hover:bg-violet-50/50 hover:shadow-md"
+                className="group flex flex-col justify-center flex-grow rounded-md border border-slate-200 bg-white p-4 shadow-soft transition-all hover:bg-slate-50"
               >
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-colors">
+                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-primary transition-colors">
                   <Truck className="h-5 w-5" />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-900">Fleet Management</span>
-                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-violet-600 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-1" />
                 </div>
               </Link>
               <Link
                 to="/hrms#attendance"
-                className="group flex flex-col justify-center flex-grow rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-md"
+                className="group flex flex-col justify-center flex-grow rounded-md border border-slate-200 bg-white p-4 shadow-soft transition-all hover:bg-slate-50"
               >
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-primary transition-colors">
                   <Clock className="h-5 w-5" />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-900">Team Attendance</span>
-                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-emerald-600 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-1" />
                 </div>
               </Link>
             </div>

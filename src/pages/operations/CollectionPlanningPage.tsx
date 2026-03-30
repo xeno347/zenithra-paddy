@@ -65,7 +65,7 @@ function RoutingLayer({ locked }: { locked: boolean }) {
       fitSelectedRoutes: true,
       show: false,
       lineOptions: {
-        styles: [{ color: "#2563eb", weight: 5, opacity: 0.85 }],
+        styles: [{ color: "#0f766e", weight: 5, opacity: 0.85 }],
       },
     });
 
@@ -142,11 +142,11 @@ export default function CollectionPlanningPage() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-border bg-white p-5 shadow-soft">
+      <section className="rounded-3xl border border-border bg-gradient-to-b from-white to-slate-50 p-5 shadow-soft sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="text-sm font-semibold text-slate-900">Collection Planning Module</div>
-            <div className="mt-1 text-xs text-slate-500">
+            <div className="text-lg font-semibold tracking-tight text-slate-900">Collection Planning Module</div>
+            <div className="mt-1 text-sm text-slate-500">
               Configure capacity, hours and zones, then route tractors.
             </div>
           </div>
@@ -154,11 +154,26 @@ export default function CollectionPlanningPage() {
           <button
             type="button"
             onClick={createNewPlan}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-soft hover:opacity-90"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-soft hover:opacity-90"
           >
             <Plus className="h-4 w-4" />
             Create new plan
           </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Capacity / day</div>
+            <div className="mt-1 text-sm font-semibold text-emerald-900">{tractorCapacityPerDay} tons</div>
+          </div>
+          <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-sky-700">Working hours</div>
+            <div className="mt-1 text-sm font-semibold text-sky-900">{workingHours} hrs</div>
+          </div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">Configured zones</div>
+            <div className="mt-1 text-sm font-semibold text-amber-900">{zones.length}</div>
+          </div>
         </div>
       </section>
 
@@ -174,8 +189,8 @@ export default function CollectionPlanningPage() {
             onClick={() => setLocked((v) => !v)}
             className={
               locked
-                ? "inline-flex items-center gap-2 rounded-xl border border-border bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
-                : "inline-flex items-center gap-2 rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                ? "inline-flex items-center gap-2 rounded-xl border border-border bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-soft hover:bg-slate-800"
+                : "inline-flex items-center gap-2 rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
             }
           >
             {locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
@@ -184,7 +199,7 @@ export default function CollectionPlanningPage() {
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-border bg-white p-4">
+          <div className="rounded-xl border border-border bg-slate-50/70 p-4">
             <div className="text-xs font-semibold text-slate-900">Per day tractor capacity</div>
             <div className="mt-1 text-[11px] text-slate-500">Set maximum paddy capacity per tractor per day.</div>
             <div className="mt-3">
@@ -194,13 +209,13 @@ export default function CollectionPlanningPage() {
                 value={tractorCapacityPerDay}
                 onChange={(e) => setTractorCapacityPerDay(Number(e.target.value))}
                 disabled={locked}
-                className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50"
+                className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
               />
               <div className="mt-1 text-[11px] text-slate-500">Units: tons (example)</div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-white p-4">
+          <div className="rounded-xl border border-border bg-slate-50/70 p-4">
             <div className="text-xs font-semibold text-slate-900">Working hours</div>
             <div className="mt-1 text-[11px] text-slate-500">Define total working hours for the day’s plan.</div>
             <div className="mt-3">
@@ -210,13 +225,13 @@ export default function CollectionPlanningPage() {
                 value={workingHours}
                 onChange={(e) => setWorkingHours(Number(e.target.value))}
                 disabled={locked}
-                className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50"
+                className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
               />
               <div className="mt-1 text-[11px] text-slate-500">Hours/day</div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-white p-4">
+          <div className="rounded-xl border border-border bg-slate-50/70 p-4">
             <div className="text-xs font-semibold text-slate-900">Different zones</div>
             <div className="mt-1 text-[11px] text-slate-500">Add zones to allocate routes and targets.</div>
 
@@ -226,13 +241,13 @@ export default function CollectionPlanningPage() {
                 onChange={(e) => setZoneInput(e.target.value)}
                 disabled={locked}
                 placeholder="e.g. Zone D"
-                className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50"
+                className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
               />
               <button
                 type="button"
                 onClick={addZone}
                 disabled={locked}
-                className="inline-flex items-center justify-center rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Add
               </button>
@@ -245,7 +260,7 @@ export default function CollectionPlanningPage() {
                   type="button"
                   onClick={() => removeZone(z)}
                   disabled={locked}
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                   title={locked ? undefined : "Remove"}
                 >
                   <span>{z}</span>
@@ -306,7 +321,7 @@ export default function CollectionPlanningPage() {
         </div>
 
         <div className="mt-4 overflow-hidden rounded-xl border border-border">
-          <div className="grid grid-cols-12 bg-slate-50 px-4 py-3 text-[11px] font-semibold text-slate-600">
+          <div className="grid grid-cols-12 bg-slate-100 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <div className="col-span-3">Plan ID</div>
             <div className="col-span-5">Plan</div>
             <div className="col-span-2">Zone</div>
@@ -316,7 +331,7 @@ export default function CollectionPlanningPage() {
 
           <div className="divide-y divide-border">
             {plans.map((p) => (
-              <div key={p.id} className="grid grid-cols-12 items-center px-4 py-3">
+              <div key={p.id} className="grid grid-cols-12 items-center px-4 py-3 transition hover:bg-slate-50">
                 <div className="col-span-3">
                   <div className="text-xs font-semibold text-slate-900">{p.id}</div>
                 </div>
