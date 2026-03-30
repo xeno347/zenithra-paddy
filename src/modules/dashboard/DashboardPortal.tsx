@@ -216,8 +216,8 @@ export default function DashboardPortal({ company, onReset }: { company?: Compan
       <main className="mx-auto w-full px-4 sm:px-6 lg:px-8 2xl:px-12">
         <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-semibold text-slate-800">Dashboard v3</h1>
-            <p className="mt-1 text-sm text-slate-500">Operational metrics and OPEX tracking</p>
+            <h1 className="text-3xl font-semibold text-slate-800">Paddy Straw Operations Dashboard</h1>
+            <p className="mt-1 text-sm text-slate-600">Farm collection, route execution, and OPEX health</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -231,7 +231,7 @@ export default function DashboardPortal({ company, onReset }: { company?: Compan
               onClick={onReset}
               className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:opacity-90"
             >
-              New Initialization
+              New Farm Setup
             </button>
           </div>
         </div>
@@ -317,7 +317,7 @@ export default function DashboardPortal({ company, onReset }: { company?: Compan
                     <XAxis dataKey="date" stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} />
                     <YAxis stroke="rgba(71,85,105,0.75)" tickLine={false} axisLine={false} width={40} />
                     <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "rgba(15, 23, 42, 0.7)" }} />
-                    <Line type="monotone" dataKey="tons" name="Tons" stroke="#1aa85a" strokeWidth={2.5} dot={false} />
+                    <Line type="monotone" dataKey="tons" name="Tons" stroke="#6f8a2b" strokeWidth={2.5} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

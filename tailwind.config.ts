@@ -5,15 +5,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#3c8dbc",
+        primary: "#6f8a2b",
         "primary-foreground": "#ffffff",
-        foreground: "#2b2f33",
-        background: "#f4f6f9",
-        muted: "#eef1f5",
-        "muted-foreground": "#6b7280",
-        border: "#d9dee3",
+        foreground: "#2f2415",
+        background: "#f7f2e5",
+        muted: "#f0e7d2",
+        "muted-foreground": "#7a6642",
+        border: "#d9cda9",
         card: "#ffffff",
-        input: "#d9dee3",
+        input: "#d9cda9",
         forest: {
           50: "#f1fbf5",
           100: "#dcf6e6",
@@ -42,7 +42,7 @@ export default {
         },
       },
       boxShadow: {
-        soft: "0 1px 3px rgba(0, 0, 0, 0.08)",
+        soft: "0 2px 10px rgba(74, 54, 20, 0.1)",
         glass: "0 10px 30px rgba(17, 24, 39, 0.15)",
       },
     },

@@ -41,8 +41,8 @@ function Item({
           "flex items-center rounded-md px-3 py-2 text-sm font-semibold transition",
           collapsed ? "justify-center" : "gap-3",
           isActive
-            ? "bg-slate-600 text-white"
-            : "text-slate-200 hover:bg-slate-700 hover:text-white"
+            ? "bg-primary text-white"
+            : "text-[#efe8d1] hover:bg-[#4a5830] hover:text-white"
         )
       }
     >
@@ -67,13 +67,13 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
       <div className="flex min-h-screen flex-col md:flex-row">
         <aside
           className={cx(
-            "overflow-hidden border-b border-slate-700 bg-slate-800 transition-[width] duration-300 ease-in-out md:border-b-0 md:border-r md:border-slate-700",
+            "overflow-hidden border-b border-[#5f6f3c] bg-gradient-to-b from-[#364323] via-[#2f3b1f] to-[#27311a] transition-[width] duration-300 ease-in-out md:border-b-0 md:border-r md:border-[#5f6f3c]",
             isSidebarCollapsed ? "md:w-[88px]" : "md:w-[280px]"
           )}
         >
           <div className="flex items-center justify-between gap-2 px-3 py-4">
             <div className={cx("flex min-w-0", isSidebarCollapsed ? "justify-center" : "items-center gap-3")}>
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-800 shadow-soft">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5efd9] text-[#41521f] shadow-soft">
                 <Leaf className="h-5 w-5" />
               </div>
               <div
@@ -83,7 +83,7 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
                 )}
               >
                 <div className="truncate text-sm font-semibold leading-tight text-white">Zenithra Paddy</div>
-                <div className="mt-0.5 truncate text-xs text-slate-300">
+                <div className="mt-0.5 truncate text-xs text-[#d8d0b8]">
                   {company?.operatorName || "Company"}
                 </div>
               </div>
@@ -92,7 +92,7 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed((prev) => !prev)}
-              className="hidden md:inline-flex items-center justify-center rounded-md border border-slate-600 bg-slate-700 p-2 text-slate-200 transition hover:bg-slate-600 hover:text-white"
+              className="hidden md:inline-flex items-center justify-center rounded-md border border-[#697b44] bg-[#44552b] p-2 text-[#efe8d1] transition hover:bg-[#4f6332] hover:text-white"
               aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
@@ -108,6 +108,7 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
             <div
               className={cx(
                 "overflow-hidden px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400 transition-all duration-300 ease-in-out",
+                "text-[#9eb08a]",
                 isSidebarCollapsed ? "max-h-0 pb-0 opacity-0" : "max-h-8 pb-2 opacity-100"
               )}
             >
@@ -121,6 +122,7 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
               <div
                 className={cx(
                   "overflow-hidden px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400 transition-all duration-300 ease-in-out",
+                  "text-[#9eb08a]",
                   isSidebarCollapsed ? "max-h-0 pb-0 opacity-0" : "max-h-8 pb-2 opacity-100"
                 )}
               >
@@ -152,6 +154,7 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
               <div
                 className={cx(
                   "overflow-hidden px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400 transition-all duration-300 ease-in-out",
+                  "text-[#9eb08a]",
                   isSidebarCollapsed ? "max-h-0 pb-0 opacity-0" : "max-h-8 pb-2 opacity-100"
                 )}
               >
@@ -163,12 +166,12 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
               </div>
             </div>
 
-            <div className="mt-4 border-t border-border pt-4">
+            <div className="mt-4 border-t border-[#5f6f3c] pt-4">
               <button
                 onClick={onLogout}
                 title={isSidebarCollapsed ? "Logout" : undefined}
                 className={cx(
-                  "flex w-full items-center rounded-md px-3 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-700 hover:text-white",
+                  "flex w-full items-center rounded-md px-3 py-2 text-sm font-semibold text-[#efe8d1] transition hover:bg-[#4a5830] hover:text-white",
                   isSidebarCollapsed ? "justify-center" : "gap-3"
                 )}
               >
@@ -180,15 +183,15 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
         </aside>
 
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-10 border-b border-border bg-white px-4 py-2.5">
+          <header className="sticky top-0 z-10 border-b border-border bg-[#fffaf0]/95 px-4 py-2.5 backdrop-blur">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold text-slate-900">{company?.siteName || "Site"}</div>
-                <div className="mt-0.5 text-xs text-slate-500">Home / Dashboard</div>
+                <div className="mt-0.5 text-xs text-[#7a6642]">Farm Operations / Dashboard</div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="hidden rounded-sm border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 md:block">
-                  ERP Modules
+                <div className="hidden rounded-sm border border-[#d7c79e] bg-[#f4ecd7] px-2.5 py-1 text-[11px] font-semibold text-[#5f4a24] md:block">
+                  Paddy Straw Ops
                 </div>
               </div>
             </div>

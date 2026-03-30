@@ -1,5 +1,5 @@
 import React from "react";
-import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import * as L from "leaflet";
 
@@ -10,8 +10,11 @@ type PipelineRow = {
   sourceType: SourceType;
   receivedFrom: string;
   receivedAt: string;
+  ownerName: string;
+  ownerContact: string;
   landOwnerDetails: string;
   landDetails: string;
+  paddyType: string;
   acresOfLand: number;
   locationOfLand: string;
   landMapped: boolean;
@@ -20,7 +23,6 @@ type PipelineRow = {
   distanceFromFacilityKm: number;
   cluster: string | null;
   coordinates?: [number, number];
-  agentAvatar?: string;
 };
 
 const rows: PipelineRow[] = [
@@ -29,8 +31,11 @@ const rows: PipelineRow[] = [
     sourceType: "pipeline",
     receivedFrom: "Pipeline AI - OCR + Risk Model",
     receivedAt: "10:25 AM",
+    ownerName: "Mahesh Patel",
+    ownerContact: "+91 98765 11001",
     landOwnerDetails: "Mahesh Patel, verified KYC",
     landDetails: "Irrigated paddy plot with tube-well access",
+    paddyType: "Swarna",
     acresOfLand: 6.5,
     locationOfLand: "Kharora Block, Raipur",
     landMapped: true,
@@ -45,8 +50,11 @@ const rows: PipelineRow[] = [
     sourceType: "agent",
     receivedFrom: "Anita Verma (Field Agent)",
     receivedAt: "10:46 AM",
+    ownerName: "Suresh Rao",
+    ownerContact: "+91 98765 22002",
     landOwnerDetails: "Suresh Rao, spouse co-owner",
     landDetails: "Mixed soil patch near canal",
+    paddyType: "MTU-1010",
     acresOfLand: 4,
     locationOfLand: "Abhanpur, Raipur",
     landMapped: false,
@@ -55,15 +63,17 @@ const rows: PipelineRow[] = [
     distanceFromFacilityKm: 27,
     cluster: null,
     coordinates: [21.1948, 81.7725],
-    agentAvatar: "https://i.pravatar.cc/80?img=32",
   },
   {
     id: "PL-002",
     sourceType: "pipeline",
     receivedFrom: "Pipeline AI - Geo Match",
     receivedAt: "11:08 AM",
+    ownerName: "Ritu Sharma",
+    ownerContact: "+91 98765 33003",
     landOwnerDetails: "Ritu Sharma, digital signature approved",
     landDetails: "Low-lying paddy area with seasonal drainage",
+    paddyType: "IR64",
     acresOfLand: 8.25,
     locationOfLand: "Tilda, Raipur",
     landMapped: true,
@@ -78,8 +88,11 @@ const rows: PipelineRow[] = [
     sourceType: "agent",
     receivedFrom: "Rahul Das (Zone Agent)",
     receivedAt: "11:21 AM",
+    ownerName: "Kamalini Devi",
+    ownerContact: "+91 98765 44004",
     landOwnerDetails: "Kamalini Devi, owner",
     landDetails: "Rain-fed farm, manual bunding",
+    paddyType: "BPT-5204",
     acresOfLand: 3.75,
     locationOfLand: "Arang, Raipur",
     landMapped: true,
@@ -88,54 +101,8 @@ const rows: PipelineRow[] = [
     distanceFromFacilityKm: 35,
     cluster: null,
     coordinates: [21.1901, 81.9568],
-    agentAvatar: "https://i.pravatar.cc/80?img=12",
   },
 ];
-
-function initials(name: string) {
-  const parts = name.split(" ").filter(Boolean);
-  return parts.slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "AG";
-}
-
-function PipelineSignal() {
-  return (
-    <svg
-      viewBox="0 0 130 56"
-      className="h-6 w-16"
-      role="img"
-      aria-label="Pipeline activity"
-    >
-      <path
-        d="M9 28 H33 M33 28 H53 M53 28 C72 28 72 11 91 11 H121 M53 28 C72 28 72 45 91 45 H121"
-        fill="none"
-        stroke="#ec4899"
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="pipeline-line"
-      />
-      <circle cx="9" cy="28" r="7" fill="white" stroke="#ec4899" strokeWidth="6" />
-      <circle cx="33" cy="28" r="7" fill="white" stroke="#ec4899" strokeWidth="6" />
-      <circle cx="53" cy="28" r="7" fill="white" stroke="#ec4899" strokeWidth="6" />
-      <circle cx="121" cy="11" r="7" fill="white" stroke="#ec4899" strokeWidth="6" className="pipeline-node" />
-      <circle cx="121" cy="45" r="7" fill="white" stroke="#ec4899" strokeWidth="6" className="pipeline-node" />
-    </svg>
-  );
-}
-
-function AgentAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
-  const fallback = initials(name);
-
-  return (
-    <div className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-[11px] font-semibold text-slate-700">
-      {avatarUrl ? (
-        <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
-      ) : (
-        <span>{fallback}</span>
-      )}
-    </div>
-  );
-}
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
@@ -152,32 +119,33 @@ function prettyDate(input: string) {
   return parsed.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function FitMappedBounds({ points }: { points: [number, number][] }) {
-  const map = useMap();
+function LandMappingCell({ row }: { row: PipelineRow }) {
+  if (!row.landMapped || !row.coordinates) {
+    return (
+      <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-500">
+        Not mapped
+      </div>
+    );
+  }
 
-  React.useEffect(() => {
-    if (!points.length) return;
-    if (points.length === 1) {
-      map.setView(points[0], 11);
-      return;
-    }
-
-    const bounds = L.latLngBounds(points.map((p) => L.latLng(p[0], p[1])));
-    map.fitBounds(bounds, { padding: [30, 30] });
-  }, [map, points]);
-
-  return null;
-}
-
-function FlyToPoint({ point }: { point: [number, number] | null }) {
-  const map = useMap();
-
-  React.useEffect(() => {
-    if (!point) return;
-    map.flyTo(point, 13, { duration: 0.8 });
-  }, [map, point]);
-
-  return null;
+  return (
+    <div className="overflow-hidden rounded-lg border border-slate-200">
+      <MapContainer
+        center={row.coordinates}
+        zoom={13}
+        dragging={false}
+        doubleClickZoom={false}
+        scrollWheelZoom={false}
+        touchZoom={false}
+        zoomControl={false}
+        attributionControl={false}
+        className="h-24 w-full"
+      >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <Marker position={row.coordinates} />
+      </MapContainer>
+    </div>
+  );
 }
 
 export default function FarmerPipelinePage() {
@@ -189,15 +157,24 @@ export default function FarmerPipelinePage() {
   );
   const [clusterInputById, setClusterInputById] = React.useState<Record<string, string>>({});
   const [selectedRowId, setSelectedRowId] = React.useState<string>(rows[0]?.id ?? "");
-  const [activePanel, setActivePanel] = React.useState<"details" | "cluster">("details");
-  const [mapFocusPoint, setMapFocusPoint] = React.useState<[number, number] | null>(null);
-  const mappedRows = React.useMemo(
-    () => rows.filter((row) => row.landMapped && row.coordinates),
-    []
-  );
+  const [showHistoryModal, setShowHistoryModal] = React.useState(false);
   const selectedRow = React.useMemo(
     () => rows.find((row) => row.id === selectedRowId) || rows[0],
     [selectedRowId]
+  );
+
+  const historyById = React.useMemo(
+    () =>
+      rows.reduce<Record<string, string[]>>((acc, row) => {
+        acc[row.id] = [
+          `Lead received from ${row.receivedFrom} at ${row.receivedAt}`,
+          `Land verification completed for ${row.ownerName}`,
+          `Harvest window set for ${prettyDate(row.expectedHarvestDate)}`,
+          row.landMapped ? "Geo coordinates mapped on plot map" : "Map coordinates pending field survey",
+        ];
+        return acc;
+      }, {}),
+    []
   );
 
   React.useEffect(() => {
@@ -212,18 +189,6 @@ export default function FarmerPipelinePage() {
         "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
     });
   }, []);
-
-  function saveCluster(rowId: string) {
-    const draft = (clusterInputById[rowId] || "").trim();
-    if (!draft) return;
-
-    setClusterById((prev) => ({ ...prev, [rowId]: draft }));
-    setClusterInputById((prev) => ({ ...prev, [rowId]: "" }));
-  }
-
-  function clearCluster(rowId: string) {
-    setClusterById((prev) => ({ ...prev, [rowId]: null }));
-  }
 
   return (
     <section className="min-h-[calc(100vh-160px)] rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-5 shadow-soft sm:p-6">
@@ -255,64 +220,12 @@ export default function FarmerPipelinePage() {
         </div>
       </div>
 
-      <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold text-slate-900">Mapped Land (Leaflet)</div>
-            <div className="mt-0.5 text-xs text-slate-500">Live map view for plots marked as mapped land.</div>
-          </div>
-          <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
-            {mappedRows.length} mapped plots
-          </div>
-        </div>
-
-        <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
-          <MapContainer
-            center={[21.2514, 81.6296]}
-            zoom={10}
-            scrollWheelZoom={false}
-            className="h-[320px] w-full"
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-
-            <FitMappedBounds points={mappedRows.map((row) => row.coordinates as [number, number])} />
-            <FlyToPoint point={mapFocusPoint} />
-
-            {mappedRows.map((row) => (
-              <React.Fragment key={row.id}>
-                <Marker position={row.coordinates as [number, number]}>
-                  <Popup>
-                    <div className="text-xs">
-                      <div className="font-semibold text-slate-900">{row.landOwnerDetails}</div>
-                      <div className="mt-1 text-slate-600">{row.locationOfLand}</div>
-                      <div className="mt-1 text-slate-600">Acres: {row.acresOfLand}</div>
-                      <div className="text-slate-600">Expected harvest: {prettyDate(row.expectedHarvestDate)}</div>
-                    </div>
-                  </Popup>
-                </Marker>
-                {selectedRow?.id === row.id ? (
-                  <CircleMarker
-                    center={row.coordinates as [number, number]}
-                    radius={18}
-                    pathOptions={{ color: "#3c8dbc", fillOpacity: 0 }}
-                  />
-                ) : null}
-              </React.Fragment>
-            ))}
-          </MapContainer>
-        </div>
-      </section>
-
       <div className="mt-4 h-[calc(100vh-320px)] min-h-[460px] overflow-auto rounded-2xl border border-slate-200 bg-white">
-        <div className="sticky top-0 z-10 hidden grid-cols-[0.9fr_1.2fr_0.8fr_1fr_0.8fr_1fr_1.6fr] gap-3 border-b border-slate-200 bg-slate-100/95 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-600 backdrop-blur md:grid">
-          <div>Source</div>
-          <div>Owner / Location</div>
-          <div>Acres</div>
+        <div className="sticky top-0 z-10 hidden grid-cols-[1.35fr_1fr_1fr_0.9fr_0.8fr_1fr] gap-3 border-b border-slate-200 bg-slate-100/95 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-600 backdrop-blur md:grid">
+          <div>Owner details</div>
+          <div>Land details</div>
+          <div>Land mapping</div>
           <div>Harvest / Next crop</div>
-          <div>Distance</div>
           <div>Cluster</div>
           <div>Actions</div>
         </div>
@@ -321,50 +234,47 @@ export default function FarmerPipelinePage() {
           {rows.map((row) => {
             return (
               <div key={row.id} className="bg-white">
-                <div className="grid w-full grid-cols-1 gap-2 px-4 py-3 text-left transition hover:bg-slate-50 md:grid-cols-[0.9fr_1.2fr_0.8fr_1fr_0.8fr_1fr_1.6fr] md:items-center md:gap-3">
+                <div className="grid w-full grid-cols-1 gap-2 px-4 py-3 text-left transition hover:bg-slate-50 md:grid-cols-[1.35fr_1fr_1fr_0.9fr_0.8fr_1fr] md:items-center md:gap-3">
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:hidden">Source</div>
-                    <div className="mt-1 flex items-center gap-2">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:hidden">Owner details</div>
+                    <div className="mt-1 mb-2 flex items-center gap-2">
                       {row.sourceType === "pipeline" ? (
-                        <>
-                          <PipelineSignal />
-                          <span className="rounded-full bg-pink-50 px-2 py-1 text-[11px] font-semibold text-pink-700 ring-1 ring-inset ring-pink-200">
-                            Pipeline
-                          </span>
-                        </>
+                        <span className="rounded-full bg-pink-50 px-2 py-1 text-[11px] font-semibold text-pink-700 ring-1 ring-inset ring-pink-200">
+                          Pipeline
+                        </span>
                       ) : (
-                        <>
-                          <AgentAvatar name={row.receivedFrom} avatarUrl={row.agentAvatar} />
-                          <span className="rounded-full bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700 ring-1 ring-inset ring-blue-200">
-                            Agent
-                          </span>
-                        </>
+                        <span className="rounded-full bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700 ring-1 ring-inset ring-blue-200">
+                          Agent
+                        </span>
                       )}
                     </div>
-                  </div>
 
-                  <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:hidden">Owner / Location</div>
-                    <div className="text-sm font-semibold text-slate-900">{row.landOwnerDetails}</div>
-                    <div className="mt-0.5 text-xs text-slate-500">{row.locationOfLand}</div>
-                  </div>
-
-                  <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:hidden">Acres</div>
-                    <div className="inline-flex rounded-md bg-slate-100 px-2 py-1 text-sm font-semibold text-slate-700">
-                      {row.acresOfLand}
+                    <div className="grid grid-cols-1 gap-1.5 text-xs text-slate-700">
+                      <div><span className="font-semibold text-slate-900">Owner:</span> {row.ownerName}</div>
+                      <div><span className="font-semibold text-slate-900">Contact:</span> {row.ownerContact}</div>
+                      <div><span className="font-semibold text-slate-900">Acres:</span> {row.acresOfLand}</div>
                     </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:hidden">Land details</div>
+                    <div className="grid grid-cols-1 gap-1.5 text-xs text-slate-700">
+                      <div><span className="font-semibold text-slate-900">Land address:</span> {row.locationOfLand}</div>
+                      <div><span className="font-semibold text-slate-900">Land area (in acres):</span> {row.acresOfLand}</div>
+                      <div><span className="font-semibold text-slate-900">Type of paddy:</span> {row.paddyType}</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:hidden">Land mapping</div>
+                    <LandMappingCell row={row} />
                   </div>
 
                   <div>
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:hidden">Harvest / Next crop</div>
                     <div className="text-xs font-semibold text-slate-700">{prettyDate(row.expectedHarvestDate)}</div>
                     <div className="mt-0.5 text-xs text-slate-500">Next: {row.nextCropDate ? prettyDate(row.nextCropDate) : "Nil"}</div>
-                  </div>
-
-                  <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:hidden">Distance</div>
-                    <div className="text-sm font-semibold text-slate-700">{row.distanceFromFacilityKm} km</div>
+                    <div className="mt-1 text-xs text-slate-500">Distance: {row.distanceFromFacilityKm} km</div>
                   </div>
 
                   <div>
@@ -387,33 +297,11 @@ export default function FarmerPipelinePage() {
                         type="button"
                         onClick={() => {
                           setSelectedRowId(row.id);
-                          setActivePanel("details");
+                          setShowHistoryModal(true);
                         }}
                         className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                       >
-                        Details
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedRowId(row.id);
-                          setActivePanel("cluster");
-                        }}
-                        className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                      >
-                        Cluster
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!row.landMapped || !row.coordinates}
-                        onClick={() => {
-                          if (!row.coordinates || !row.landMapped) return;
-                          setSelectedRowId(row.id);
-                          setMapFocusPoint(row.coordinates);
-                        }}
-                        className="rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Show on map
+                        History
                       </button>
                     </div>
                   </div>
@@ -423,88 +311,6 @@ export default function FarmerPipelinePage() {
           })}
         </div>
       </div>
-
-      <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold text-slate-900">Action Workspace</div>
-            <div className="mt-0.5 text-xs text-slate-500">Selected record: {selectedRow.id} - {selectedRow.landOwnerDetails}</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setActivePanel("details")}
-              className={`rounded-md px-3 py-1.5 text-xs font-semibold ${activePanel === "details" ? "bg-primary text-white" : "border border-slate-200 bg-white text-slate-700"}`}
-            >
-              Details
-            </button>
-            <button
-              type="button"
-              onClick={() => setActivePanel("cluster")}
-              className={`rounded-md px-3 py-1.5 text-xs font-semibold ${activePanel === "cluster" ? "bg-primary text-white" : "border border-slate-200 bg-white text-slate-700"}`}
-            >
-              Cluster action
-            </button>
-          </div>
-        </div>
-
-        {activePanel === "details" ? (
-          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
-            <DetailItem label="Record ID" value={selectedRow.id} />
-            <DetailItem label="Received from" value={selectedRow.receivedFrom} />
-            <DetailItem label="Received at" value={selectedRow.receivedAt} />
-            <DetailItem label="Land owner details" value={selectedRow.landOwnerDetails} />
-            <DetailItem label="Land details" value={selectedRow.landDetails} />
-            <DetailItem label="Location of land" value={selectedRow.locationOfLand} />
-            <DetailItem label="Land mapped" value={selectedRow.landMapped ? "Yes" : "No"} />
-            <DetailItem label="Expected harvested date" value={prettyDate(selectedRow.expectedHarvestDate)} />
-            <DetailItem label="Next crop date" value={selectedRow.nextCropDate ? prettyDate(selectedRow.nextCropDate) : "Nil"} />
-            <DetailItem label="Distance from warehouse/plant" value={`${selectedRow.distanceFromFacilityKm} km`} />
-          </div>
-        ) : (
-          <div className="mt-4 max-w-md rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Cluster action for {selectedRow.id}</div>
-            <div className="mt-3 space-y-2">
-              {clusterById[selectedRow.id] ? (
-                <>
-                  <div className="rounded-lg bg-emerald-50 px-2.5 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
-                    Cluster: {clusterById[selectedRow.id]}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => clearCluster(selectedRow.id)}
-                    className="rounded-lg border border-border bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                  >
-                    Update cluster
-                  </button>
-                </>
-              ) : (
-                <>
-                  <input
-                    type="text"
-                    value={clusterInputById[selectedRow.id] || ""}
-                    onChange={(e) =>
-                      setClusterInputById((prev) => ({
-                        ...prev,
-                        [selectedRow.id]: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter cluster"
-                    className="w-full rounded-lg border border-border bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:ring-4 focus:ring-blue-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => saveCluster(selectedRow.id)}
-                    className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:opacity-90"
-                  >
-                    Save cluster
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-      </section>
 
       <style>{`
         .pipeline-line {
@@ -535,6 +341,62 @@ export default function FarmerPipelinePage() {
           }
         }
       `}</style>
+
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <div>
+                <div className="text-lg font-semibold text-slate-900">History - {selectedRow.id}</div>
+                <div className="mt-1 text-sm text-slate-500">{selectedRow.landOwnerDetails}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(false)}
+                className="rounded-lg p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700"
+              >
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto p-6">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                <DetailItem label="Record ID" value={selectedRow.id} />
+                <DetailItem label="Received from" value={selectedRow.receivedFrom} />
+                <DetailItem label="Received at" value={selectedRow.receivedAt} />
+                <DetailItem label="Owner" value={selectedRow.ownerName} />
+                <DetailItem label="Owner contact" value={selectedRow.ownerContact} />
+                <DetailItem label="Land details" value={selectedRow.landDetails} />
+                <DetailItem label="Location of land" value={selectedRow.locationOfLand} />
+                <DetailItem label="Land mapped" value={selectedRow.landMapped ? "Yes" : "No"} />
+                <DetailItem label="Expected harvested date" value={prettyDate(selectedRow.expectedHarvestDate)} />
+                <DetailItem label="Next crop date" value={selectedRow.nextCropDate ? prettyDate(selectedRow.nextCropDate) : "Nil"} />
+                <DetailItem label="Distance from warehouse/plant" value={`${selectedRow.distanceFromFacilityKm} km`} />
+                <div className="sm:col-span-2 xl:col-span-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">History timeline</div>
+                  <ul className="mt-2 space-y-1.5 text-xs font-semibold text-slate-700">
+                    {(historyById[selectedRow.id] || []).map((evt) => (
+                      <li key={evt}>• {evt}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-200 bg-slate-50 px-6 py-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(false)}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
