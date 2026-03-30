@@ -1,11 +1,13 @@
 import React from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   BarChart3,
   Users,
   Settings,
   Leaf,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -17,20 +19,24 @@ function Item({
   to,
   icon: Icon,
   label,
+  collapsed = false,
   end = false,
 }: {
   to: string;
   icon: ComponentType<{ className?: string }>;
   label: string;
+  collapsed?: boolean;
   end?: boolean;
 }) {
   return (
     <NavLink
       to={to}
       end={end}
+      title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cx(
-          "flex items-center gap-3 rounded-xl px-3 py-2 text-sm",
+          "flex items-center rounded-xl px-3 py-2 text-sm",
+          collapsed ? "justify-center" : "gap-3",
           isActive
             ? "bg-primary text-white shadow-sm"
             : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -38,54 +44,70 @@ function Item({
       }
     >
       <Icon className="h-4 w-4" />
-      <span className="truncate">{label}</span>
+      {!collapsed && <span className="truncate">{label}</span>}
     </NavLink>
   );
 }
 
 export default function ErpLayout({ company, onReset, onLogout }) {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
+  const location = useLocation();
+  const isFullWidthRoute = location.pathname.startsWith("/operations/farmer-pipeline");
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="grid min-h-screen grid-cols-1 md:grid-cols-[280px_1fr]">
+      <div
+        className={cx(
+          "grid min-h-screen grid-cols-1",
+          isSidebarCollapsed ? "md:grid-cols-[88px_1fr]" : "md:grid-cols-[280px_1fr]"
+        )}
+      >
         <aside className="border-b border-border bg-white md:border-b-0 md:border-r">
-          <div className="flex items-center gap-3 px-4 py-4">
+          <div className={cx("flex px-4 py-4", isSidebarCollapsed ? "justify-center" : "items-center gap-3")}>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-soft">
               <Leaf className="h-5 w-5" />
             </div>
-            <div className="min-w-0">
-              <div className="text-sm font-semibold leading-tight text-slate-900">Zenithra Paddy</div>
-              <div className="mt-0.5 truncate text-xs text-slate-500">
-                {company?.operatorName || "Company"}
+            {!isSidebarCollapsed && (
+              <div className="min-w-0">
+                <div className="text-sm font-semibold leading-tight text-slate-900">Zenithra Paddy</div>
+                <div className="mt-0.5 truncate text-xs text-slate-500">
+                  {company?.operatorName || "Company"}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <nav className="px-3 pb-4">
             <div className="space-y-1">
-              <Item to="/dashboard" icon={BarChart3} label="Dashboard" end />
-              <Item to="/hrms" icon={Users} label="HRMS" />
-              <Item to="/settings" icon={Settings} label="Settings" />
+              <Item to="/dashboard" icon={BarChart3} label="Dashboard" collapsed={isSidebarCollapsed} end />
+              <Item to="/hrms" icon={Users} label="HRMS" collapsed={isSidebarCollapsed} />
+              <Item to="/settings" icon={Settings} label="Settings" collapsed={isSidebarCollapsed} />
             </div>
 
             <div className="mt-6">
-              <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                Operations Managment
-              </div>
+              {!isSidebarCollapsed && (
+                <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  Operations Managment
+                </div>
+              )}
               <div className="space-y-1">
                 <Item
                   to="/operations/collection-planning"
                   icon={BarChart3}
                   label="Collection planning"
+                  collapsed={isSidebarCollapsed}
                 />
                 <Item
                   to="/operations/farmer-pipeline"
                   icon={BarChart3}
                   label="Farmer pipeline"
+                  collapsed={isSidebarCollapsed}
                 />
                 <Item
                   to="/operations/live-tracking"
                   icon={BarChart3}
                   label="Live tracking"
+                  collapsed={isSidebarCollapsed}
                 />
               </div>
             </div>
@@ -93,18 +115,26 @@ export default function ErpLayout({ company, onReset, onLogout }) {
             <div className="mt-4 border-t border-border pt-4">
               <button
                 onClick={onLogout}
-                className="mb-2 flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                title={isSidebarCollapsed ? "Logout" : undefined}
+                className={cx(
+                  "mb-2 flex w-full items-center rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                  isSidebarCollapsed ? "justify-center" : "gap-3"
+                )}
               >
                 <LogOut className="h-4 w-4" />
-                <span>Logout</span>
+                {!isSidebarCollapsed && <span>Logout</span>}
               </button>
 
               <button
                 onClick={onReset}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                title={isSidebarCollapsed ? "Switch company" : undefined}
+                className={cx(
+                  "flex w-full items-center rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                  isSidebarCollapsed ? "justify-center" : "gap-3"
+                )}
               >
                 <LogOut className="h-4 w-4" />
-                <span>Switch company</span>
+                {!isSidebarCollapsed && <span>Switch company</span>}
               </button>
             </div>
           </nav>
@@ -117,13 +147,33 @@ export default function ErpLayout({ company, onReset, onLogout }) {
                 <div className="truncate text-sm font-semibold text-slate-900">{company?.siteName || "Site"}</div>
                 <div className="mt-0.5 text-xs text-slate-500">Role: {company?.role || "owner"}</div>
               </div>
-              <div className="hidden md:block text-xs text-slate-500">
-                ERP Modules
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+                  className="hidden md:inline-flex items-center justify-center rounded-lg border border-border bg-white p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                  aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  {isSidebarCollapsed ? (
+                    <PanelLeftOpen className="h-4 w-4" />
+                  ) : (
+                    <PanelLeftClose className="h-4 w-4" />
+                  )}
+                </button>
+                <div className="hidden md:block text-xs text-slate-500">
+                  ERP Modules
+                </div>
               </div>
             </div>
           </header>
 
-          <main className="mx-auto w-full max-w-6xl px-4 py-6">
+          <main
+            className={cx(
+              "w-full px-4 py-6",
+              isFullWidthRoute ? "max-w-none" : "mx-auto max-w-6xl"
+            )}
+          >
             <Outlet />
           </main>
         </div>
