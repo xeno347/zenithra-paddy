@@ -10,7 +10,11 @@
     "noEmit": true,
     "skipLibCheck": true,
     "strict": false,
-    "types": ["vite/client", "leaflet"]
+    "types": ["vite/client", "leaflet"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src"]
 }

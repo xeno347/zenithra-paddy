@@ -35,13 +35,23 @@ export function useCompanySession() {
     const createdCredentials = generateCredentials(data?.operatorName || "company");
     setCompany(data);
     setCredentials(createdCredentials);
-    setIsAuthenticated(false);
+    setIsAuthenticated(true);
 
     writeJson(STORAGE_KEYS.COMPANY, data);
     writeJson(STORAGE_KEYS.CREDENTIALS, createdCredentials);
-    writeJson(STORAGE_KEYS.AUTH_SESSION, false);
+    writeJson(STORAGE_KEYS.AUTH_SESSION, true);
 
     return createdCredentials;
+  }, []);
+
+  const activateProjectSession = useCallback((data, projectCredentials) => {
+    setCompany(data);
+    setCredentials(projectCredentials || null);
+    setIsAuthenticated(Boolean(projectCredentials));
+
+    writeJson(STORAGE_KEYS.COMPANY, data);
+    writeJson(STORAGE_KEYS.CREDENTIALS, projectCredentials || null);
+    writeJson(STORAGE_KEYS.AUTH_SESSION, Boolean(projectCredentials));
   }, []);
 
   const loginToDashboard = useCallback((loginId: string, password: string) => {
@@ -77,6 +87,7 @@ export function useCompanySession() {
     isAuthenticated,
     ready,
     completeOnboarding,
+    activateProjectSession,
     loginToDashboard,
     logoutFromDashboard,
     resetCompany,

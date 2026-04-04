@@ -4,7 +4,20 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import * as L from "leaflet";
 import "leaflet-routing-machine";
-import { Lock, Plus, Route as RouteIcon, Unlock } from "lucide-react";
+import {
+  Clock3,
+  GitBranch,
+  Lock,
+  Route as RouteIcon,
+  Save,
+  Tractor,
+  Unlock,
+} from "lucide-react";
+import {
+  buildClusters,
+  getSavedLandClusterConfig,
+  landClusterDemoParcels as parcels,
+} from "./landClusterDemoData";
 
 type PlanStatus = "pending" | "started" | "completed";
 
@@ -15,6 +28,36 @@ type CollectionPlan = {
   date: string;
   status: PlanStatus;
 };
+
+type FleetActivityId = "slasher" | "racker" | "baler" | "loader" | "carrier";
+
+type FleetDecision = Record<FleetActivityId, { driverId: string; fleetId: string }>;
+
+const fleetActivities: { id: FleetActivityId; label: string }[] = [
+  { id: "slasher", label: "Slasher" },
+  { id: "racker", label: "Racker" },
+  { id: "baler", label: "Baler" },
+  { id: "loader", label: "Loader" },
+  { id: "carrier", label: "Carrier" },
+];
+
+const availableDrivers = [
+  { id: "DRV-001", name: "Ravi Patel" },
+  { id: "DRV-002", name: "Sanjay Verma" },
+  { id: "DRV-003", name: "Nilesh Rao" },
+  { id: "DRV-004", name: "Amit Sahu" },
+  { id: "DRV-005", name: "Deepak Yadav" },
+  { id: "DRV-006", name: "Kiran Lal" },
+];
+
+const availableFleets = [
+  { id: "FLT-101", name: "Mahindra Yuvo 575" },
+  { id: "FLT-102", name: "John Deere 5310" },
+  { id: "FLT-103", name: "Sonalika DI 745" },
+  { id: "FLT-104", name: "New Holland 3600" },
+  { id: "FLT-105", name: "Powertrac Euro 50" },
+  { id: "FLT-106", name: "Farmtrac Champion" },
+];
 
 function StatusPill({ status }: { status: PlanStatus }) {
   const meta =
@@ -37,14 +80,13 @@ function RoutingLayer({ locked }: { locked: boolean }) {
   const routeWaypoints = useMemo(
     () => [
       L.latLng(21.2514, 81.6296),
-      L.latLng(21.2150, 81.6640),
-      L.latLng(21.1805, 81.7020),
+      L.latLng(21.2814, 81.6596),
+      L.latLng(21.2214, 81.6696),
     ],
     []
   );
 
   useEffect(() => {
-    // Fix default icon paths in leaflet (Vite-friendly)
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl:
@@ -84,11 +126,25 @@ function RoutingLayer({ locked }: { locked: boolean }) {
 }
 
 export default function CollectionPlanningPage() {
+  const savedClusterConfig = getSavedLandClusterConfig(3, 8);
   const [locked, setLocked] = useState(false);
+  const [selectedClusterId, setSelectedClusterId] = useState<string>("");
+  const [configurationSaved, setConfigurationSaved] = useState(false);
   const [tractorCapacityPerDay, setTractorCapacityPerDay] = useState<number>(18);
   const [workingHours, setWorkingHours] = useState<number>(10);
-  const [zoneInput, setZoneInput] = useState("");
-  const [zones, setZones] = useState<string[]>(["Zone A", "Zone B", "Zone C"]);
+  const zones = ["Zone A", "Zone B", "Zone C"];
+  const [fleetDecision, setFleetDecision] = useState<FleetDecision>({
+    slasher: { driverId: "", fleetId: "" },
+    racker: { driverId: "", fleetId: "" },
+    baler: { driverId: "", fleetId: "" },
+    loader: { driverId: "", fleetId: "" },
+    carrier: { driverId: "", fleetId: "" },
+  });
+
+  const { clusters } = useMemo(
+    () => buildClusters(parcels, savedClusterConfig.clusterCount, savedClusterConfig.clusterRadiusKm),
+    [savedClusterConfig.clusterCount, savedClusterConfig.clusterRadiusKm]
+  );
 
   const [plans, setPlans] = useState<CollectionPlan[]>([
     {
@@ -114,31 +170,22 @@ export default function CollectionPlanningPage() {
     },
   ]);
 
-  function addZone() {
-    const z = zoneInput.trim();
-    if (!z) return;
-    setZones((prev) => (prev.includes(z) ? prev : [...prev, z]));
-    setZoneInput("");
+  function handleClusterChange(clusterId: string) {
+    setSelectedClusterId(clusterId);
+    setConfigurationSaved(false);
   }
 
-  function removeZone(z: string) {
-    setZones((prev) => prev.filter((x) => x !== z));
-  }
-
-  function createNewPlan() {
-    const zone = zones[0] || "Unassigned";
-    const next = (plans.length + 1).toString().padStart(3, "0");
-    setPlans((prev) => [
-      {
-        id: `CP-${next}`,
-        title: "New plan",
-        zone,
-        date: new Date().toISOString().slice(0, 10),
-        status: "pending",
-      },
+  function updateFleetDecision(activityId: FleetActivityId, field: "driverId" | "fleetId", value: string) {
+    setFleetDecision((prev) => ({
       ...prev,
-    ]);
+      [activityId]: {
+        ...prev[activityId],
+        [field]: value,
+      },
+    }));
   }
+
+  const selectedCluster = selectedClusterId ? clusters.find((c) => c.id === selectedClusterId) : null;
 
   return (
     <div className="space-y-4">
@@ -151,14 +198,20 @@ export default function CollectionPlanningPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={createNewPlan}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-soft hover:opacity-90"
-          >
-            <Plus className="h-4 w-4" />
-            Create new plan
-          </button>
+          <div className="w-full sm:w-auto">
+            <select
+              value={selectedClusterId}
+              onChange={(e) => handleClusterChange(e.target.value)}
+              className="w-full rounded-xl border border-border bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:ring-4 focus:ring-primary/20 hover:bg-slate-50"
+            >
+              <option value="">Select a cluster...</option>
+              {clusters.map((cluster) => (
+                <option key={cluster.id} value={cluster.id}>
+                  {cluster.id} ({cluster.members.length} parcels)
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -177,8 +230,17 @@ export default function CollectionPlanningPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-border bg-white p-5 shadow-soft">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <section className={`relative rounded-2xl border border-border bg-white p-3 shadow-soft ${!selectedCluster ? "blur-sm" : ""}`}>
+        {!selectedCluster && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/30 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-2">
+              <Lock className="h-10 w-10 text-slate-400" />
+              <div className="text-sm font-semibold text-slate-600">Select a cluster to configure</div>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <RouteIcon className="h-4 w-4 text-primary" />
             <div className="text-sm font-semibold text-slate-900">Configuration</div>
@@ -187,10 +249,11 @@ export default function CollectionPlanningPage() {
           <button
             type="button"
             onClick={() => setLocked((v) => !v)}
+            disabled={!selectedCluster}
             className={
-              locked
-                ? "inline-flex items-center gap-2 rounded-xl border border-border bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-soft hover:bg-slate-800"
-                : "inline-flex items-center gap-2 rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+              locked && selectedCluster
+                ? "inline-flex items-center gap-1.5 rounded-xl border border-border bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-soft hover:bg-slate-800"
+                : "inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
             }
           >
             {locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
@@ -198,96 +261,124 @@ export default function CollectionPlanningPage() {
           </button>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-border bg-slate-50/70 p-4">
-            <div className="text-xs font-semibold text-slate-900">Per day tractor capacity</div>
-            <div className="mt-1 text-[11px] text-slate-500">Set maximum paddy capacity per tractor per day.</div>
-            <div className="mt-3">
+        <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2">
+          <div className="rounded-xl border border-border bg-slate-50/70 p-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
+              <Tractor className="h-3.5 w-3.5 text-emerald-700" />
+              <span>Per day tractor capacity</span>
+            </div>
+            <div className="mt-1.5">
               <input
                 type="number"
                 inputMode="numeric"
                 value={tractorCapacityPerDay}
                 onChange={(e) => setTractorCapacityPerDay(Number(e.target.value))}
-                disabled={locked}
-                className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
+                disabled={locked || !selectedCluster}
+                className="w-full rounded-xl border border-border bg-white px-2.5 py-1.5 text-xs text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
               />
-              <div className="mt-1 text-[11px] text-slate-500">Units: tons (example)</div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-slate-50/70 p-4">
-            <div className="text-xs font-semibold text-slate-900">Working hours</div>
-            <div className="mt-1 text-[11px] text-slate-500">Define total working hours for the day’s plan.</div>
-            <div className="mt-3">
+          <div className="rounded-xl border border-border bg-slate-50/70 p-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
+              <Clock3 className="h-3.5 w-3.5 text-sky-700" />
+              <span>Working hours</span>
+            </div>
+            <div className="mt-1.5">
               <input
                 type="number"
                 inputMode="numeric"
                 value={workingHours}
                 onChange={(e) => setWorkingHours(Number(e.target.value))}
-                disabled={locked}
-                className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
+                disabled={locked || !selectedCluster}
+                className="w-full rounded-xl border border-border bg-white px-2.5 py-1.5 text-xs text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
               />
-              <div className="mt-1 text-[11px] text-slate-500">Hours/day</div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-slate-50/70 p-4">
-            <div className="text-xs font-semibold text-slate-900">Different zones</div>
-            <div className="mt-1 text-[11px] text-slate-500">Add zones to allocate routes and targets.</div>
+        </div>
 
-            <div className="mt-3 flex gap-2">
-              <input
-                value={zoneInput}
-                onChange={(e) => setZoneInput(e.target.value)}
-                disabled={locked}
-                placeholder="e.g. Zone D"
-                className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
-              />
-              <button
-                type="button"
-                onClick={addZone}
-                disabled={locked}
-                className="inline-flex items-center justify-center rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Add
-              </button>
-            </div>
+        <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50/60 p-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700">
+            <GitBranch className="h-3.5 w-3.5 text-slate-600" />
+            <span>Fleet Decision Pipeline</span>
+          </div>
+          <div className="mt-1 grid grid-cols-12 px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+            <div className="col-span-4">Process Step</div>
+            <div className="col-span-4">Driver</div>
+            <div className="col-span-4">Fleet</div>
+          </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {zones.map((z) => (
-                <button
-                  key={z}
-                  type="button"
-                  onClick={() => removeZone(z)}
-                  disabled={locked}
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  title={locked ? undefined : "Remove"}
-                >
-                  <span>{z}</span>
-                  {!locked ? <span className="text-slate-400">×</span> : null}
-                </button>
-              ))}
-            </div>
+          <div className="space-y-1">
+            {fleetActivities.map((activity, index) => (
+              <div key={activity.id} className="grid grid-cols-12 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5">
+                <div className="col-span-4 flex items-center gap-1.5 min-w-0">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[9px] font-bold text-emerald-700">
+                    {index + 1}
+                  </div>
+                  <div className="truncate text-[11px] font-semibold text-slate-800">{activity.label}</div>
+                  {index < fleetActivities.length - 1 ? <span className="text-[10px] text-slate-300">{">"}</span> : null}
+                </div>
+
+                <div className="col-span-4">
+                  <select
+                    value={fleetDecision[activity.id].driverId}
+                    onChange={(e) => updateFleetDecision(activity.id, "driverId", e.target.value)}
+                    disabled={locked || !selectedCluster}
+                    className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-700 outline-none focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-50"
+                  >
+                    <option value="">Select driver</option>
+                    {availableDrivers.map((driver) => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-span-4">
+                  <select
+                    value={fleetDecision[activity.id].fleetId}
+                    onChange={(e) => updateFleetDecision(activity.id, "fleetId", e.target.value)}
+                    disabled={locked || !selectedCluster}
+                    className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-700 outline-none focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-50"
+                  >
+                    <option value="">Select fleet</option>
+                    {availableFleets.map((fleet) => (
+                      <option key={fleet.id} value={fleet.id}>
+                        {fleet.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="mt-4 rounded-xl border border-dashed border-border bg-slate-50 p-4 text-xs text-slate-600">
-          <div className="font-semibold text-slate-900">Current config</div>
-          <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
-            <div>
-              <span className="text-slate-500">Capacity/day:</span> {tractorCapacityPerDay}
-            </div>
-            <div>
-              <span className="text-slate-500">Working hours:</span> {workingHours}
-            </div>
-            <div className="truncate">
-              <span className="text-slate-500">Zones:</span> {zones.join(", ") || "—"}
-            </div>
-          </div>
+        <div className="mt-2 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setConfigurationSaved(true)}
+            disabled={!selectedCluster || locked}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-primary to-emerald-600 px-5 py-2 text-[11px] font-semibold text-white shadow-soft hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Save className="h-3.5 w-3.5" />
+            Save configuration
+          </button>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-border bg-white p-0 shadow-soft">
+      <section className={`relative rounded-2xl border border-border bg-white p-0 shadow-soft ${!configurationSaved ? "blur-sm" : ""}`}>
+        {!configurationSaved && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/30 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-2">
+              <Lock className="h-10 w-10 text-slate-400" />
+              <div className="text-sm font-semibold text-slate-600">Save configuration to enable route mapping</div>
+            </div>
+          </div>
+        )}
+        
         <div className="border-b border-border px-5 py-4">
           <div className="text-sm font-semibold text-slate-900">Route map</div>
           <div className="mt-1 text-xs text-slate-500">

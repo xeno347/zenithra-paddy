@@ -4,7 +4,11 @@ import {
   LayoutDashboard,
   Route,
   Radar,
+  Map,
   GitBranch,
+  Truck,
+  CalendarDays,
+  Car,
   Users,
   Settings,
   Leaf,
@@ -147,6 +151,12 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
                   label="Farmer pipeline"
                   collapsed={isSidebarCollapsed}
                 />
+                <Item
+                  to="/operations/land-cluster"
+                  icon={Map}
+                  label="Land cluster"
+                  collapsed={isSidebarCollapsed}
+                />
               </div>
             </div>
 
@@ -163,6 +173,38 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
               <div className="space-y-1">
                 <Item to="/hrms" icon={Users} label="HRMS" collapsed={isSidebarCollapsed} />
                 <Item to="/settings" icon={Settings} label="Settings" collapsed={isSidebarCollapsed} />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div
+                className={cx(
+                  "overflow-hidden px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400 transition-all duration-300 ease-in-out",
+                  "text-[#9eb08a]",
+                  isSidebarCollapsed ? "max-h-0 pb-0 opacity-0" : "max-h-8 pb-2 opacity-100"
+                )}
+              >
+                Logistics
+              </div>
+              <div className="space-y-1">
+                <Item
+                  to="/logistics/management"
+                  icon={Truck}
+                  label="Logistics management"
+                  collapsed={isSidebarCollapsed}
+                />
+                <Item
+                  to="/logistics/fleet-chart"
+                  icon={CalendarDays}
+                  label="Fleet chart"
+                  collapsed={isSidebarCollapsed}
+                />
+                <Item
+                  to="/logistics/vehicle-management"
+                  icon={Car}
+                  label="Vehicle management"
+                  collapsed={isSidebarCollapsed}
+                />
               </div>
             </div>
 

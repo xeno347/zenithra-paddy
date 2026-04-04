@@ -36,18 +36,18 @@ export default function LoginPage({ hasCompany, onLogin }: LoginPageProps) {
 
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">Dashboard Login</h1>
           <p className="mt-1 text-sm text-slate-600">
-            Use the login ID and password generated after onboarding.
+            Use the login ID and password generated for your project.
           </p>
 
           {!hasCompany ? (
             <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              No registered company found. Please complete onboarding first.
+              No registered company found. Please create a project first.
               <div className="mt-3">
                 <Link
-                  to="/onboarding"
+                  to="/create-project"
                   className="inline-flex rounded-lg bg-gradient-to-r from-primary to-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-soft hover:opacity-90"
                 >
-                  Go to onboarding
+                  Go to create project
                 </Link>
               </div>
             </div>
@@ -89,8 +89,8 @@ export default function LoginPage({ hasCompany, onLogin }: LoginPageProps) {
           )}
 
           <div className="mt-5 text-xs text-slate-600">
-            <Link to="/" className="font-semibold text-slate-800 hover:underline">
-              Back to selection
+            <Link to="/create-project" className="font-semibold text-slate-800 hover:underline">
+              Back to create project
             </Link>
           </div>
         </div>
