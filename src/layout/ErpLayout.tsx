@@ -65,14 +65,15 @@ function Item({
 
 export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
+  const sidebarWidthClass = isSidebarCollapsed ? "md:w-[88px]" : "md:w-[280px]";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen flex-col md:flex-row">
         <aside
           className={cx(
-            "overflow-hidden border-b border-[#5f6f3c] bg-gradient-to-b from-[#364323] via-[#2f3b1f] to-[#27311a] transition-[width] duration-300 ease-in-out md:border-b-0 md:border-r md:border-[#5f6f3c]",
-            isSidebarCollapsed ? "md:w-[88px]" : "md:w-[280px]"
+            "overflow-hidden border-b border-[#5f6f3c] bg-gradient-to-b from-[#364323] via-[#2f3b1f] to-[#27311a] transition-[width] duration-300 ease-in-out md:fixed md:inset-y-0 md:left-0 md:z-20 md:border-b-0 md:border-r md:border-[#5f6f3c]",
+            sidebarWidthClass
           )}
         >
           <div className="flex items-center justify-between gap-2 px-3 py-4">
@@ -224,7 +225,13 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
           </nav>
         </aside>
 
-        <div className="min-w-0 flex-1">
+        <div
+          className={cx(
+            "min-w-0 flex-1",
+            "md:transition-[padding-left] md:duration-300 md:ease-in-out",
+            sidebarWidthClass === "md:w-[88px]" ? "md:pl-[88px]" : "md:pl-[280px]"
+          )}
+        >
           <header className="sticky top-0 z-10 border-b border-border bg-[#fffaf0]/95 px-4 py-2.5 backdrop-blur">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
