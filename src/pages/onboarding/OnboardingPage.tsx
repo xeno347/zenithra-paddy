@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronRight, ArrowLeft } from "lucide-react";
+import { ChevronRight, ArrowLeft, Download, X } from "lucide-react";
 import { STORAGE_KEYS } from "../../lib/config/storageKeys";
 import { readJson, writeJson } from "../../lib/storage/jsonStorage";
 
@@ -12,6 +12,126 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
   const navigate = useNavigate();
   const location = useLocation();
   const [step, setStep] = useState(1);
+  const [showDPRModal, setShowDPRModal] = useState(false);
+  const [dprPayload, setDprPayload] = useState<any>(null);
+
+  type CapexRow = {
+    id: string;
+    lineItem: string;
+    isCustom: boolean;
+    make: string;
+    lease: boolean;
+    capacityPerDay: string;
+    quantity: string;
+    perUnitCost: string;
+  };
+
+  type OpexRow = {
+    id: string;
+    lineItem: string;
+    isCustom: boolean;
+    make: string;
+    lease: boolean;
+    capacityPerDay: string;
+    quantity: string;
+    perUnitCost: string;
+  };
+
+  const [capexRows, setCapexRows] = useState<CapexRow[]>([
+    {
+      id: "capex-slasher",
+      lineItem: "Slasher",
+      isCustom: false,
+      make: "",
+      lease: false,
+      capacityPerDay: "",
+      quantity: "",
+      perUnitCost: "",
+    },
+    {
+      id: "capex-racker",
+      lineItem: "Racker",
+      isCustom: false,
+      make: "",
+      lease: false,
+      capacityPerDay: "",
+      quantity: "",
+      perUnitCost: "",
+    },
+    {
+      id: "capex-bailer",
+      lineItem: "Bailer",
+      isCustom: false,
+      make: "",
+      lease: false,
+      capacityPerDay: "",
+      quantity: "",
+      perUnitCost: "",
+    },
+    {
+      id: "capex-loader",
+      lineItem: "Loader",
+      isCustom: false,
+      make: "",
+      lease: false,
+      capacityPerDay: "",
+      quantity: "",
+      perUnitCost: "",
+    },
+  ]);
+
+  const [opexRows, setOpexRows] = useState<OpexRow[]>([
+    {
+      id: "opex-diesel",
+      lineItem: "Diesel",
+      isCustom: false,
+      make: "",
+      lease: false,
+      capacityPerDay: "",
+      quantity: "",
+      perUnitCost: "",
+    },
+    {
+      id: "opex-labour",
+      lineItem: "Labour",
+      isCustom: false,
+      make: "",
+      lease: false,
+      capacityPerDay: "",
+      quantity: "",
+      perUnitCost: "",
+    },
+    {
+      id: "opex-lease-amount",
+      lineItem: "Lease amount",
+      isCustom: false,
+      make: "",
+      lease: true,
+      capacityPerDay: "",
+      quantity: "",
+      perUnitCost: "",
+    },
+    {
+      id: "opex-maintenance",
+      lineItem: "Maintenance",
+      isCustom: false,
+      make: "",
+      lease: false,
+      capacityPerDay: "",
+      quantity: "",
+      perUnitCost: "",
+    },
+    {
+      id: "opex-miscellaneous",
+      lineItem: "Miscellaneous",
+      isCustom: false,
+      make: "",
+      lease: false,
+      capacityPerDay: "",
+      quantity: "",
+      perUnitCost: "",
+    },
+  ]);
   const [form, setForm] = useState({
     projectName: "",
     organizationName: "",
@@ -25,16 +145,18 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
     collectionWindowFrom: "",
     collectionWindowTo: "",
     collectionDetails: "",
-    capexAmount: "",
-    capexBreakdown: "",
     opexLabor: "",
     opexFuel: "",
     opexMaintenance: "",
     opexLoading: "",
     opexMisc: "",
-    investmentAmount: "",
-    investmentSource: "",
-    amortizationPeriod: "",
+    totalInvestment: "",
+    equityFunding: "",
+    debtFunding: "",
+    debtInterestRate: "",
+    amortizationYears: "",
+    amortizationMonths: "",
+    amortizationDays: "",
   });
 
   const projectIdFromState = (location.state as any)?.projectId as string | undefined;
@@ -87,7 +209,91 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
     return (y2 - y1) * 360 + (m2 - m1) * 30 + (d2 - d1);
   };
 
+  const capexItems = capexRows.map((row) => {
+    const quantity = parseFloat(row.quantity) || 0;
+    const perUnitCost = parseFloat(row.perUnitCost) || 0;
+    const amount = quantity * perUnitCost;
+    return {
+      ...row,
+      quantity,
+      perUnitCost,
+      capacityPerDay: parseFloat(row.capacityPerDay) || 0,
+      amount,
+    };
+  });
+
+  const capexTotal = capexItems.reduce((sum, row) => sum + (row.amount || 0), 0);
+
+  const opexItems = opexRows.map((row) => {
+    const quantity = parseFloat(row.quantity) || 0;
+    const perUnitCost = parseFloat(row.perUnitCost) || 0;
+    const amount = quantity * perUnitCost;
+    return {
+      ...row,
+      quantity,
+      perUnitCost,
+      capacityPerDay: parseFloat(row.capacityPerDay) || 0,
+      amount,
+    };
+  });
+
+  const opexTotal = opexItems.reduce((sum, row) => sum + (row.amount || 0), 0);
+
+  const updateCapexRow = (id: string, patch: Partial<CapexRow>) => {
+    setCapexRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  };
+
+  const updateOpexRow = (id: string, patch: Partial<OpexRow>) => {
+    setOpexRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  };
+
+  const addCapexRow = () => {
+    setCapexRows((prev) => [
+      ...prev,
+      {
+        id: `capex-custom-${Date.now()}`,
+        lineItem: "",
+        isCustom: true,
+        make: "",
+        lease: false,
+        capacityPerDay: "",
+        quantity: "",
+        perUnitCost: "",
+      },
+    ]);
+  };
+
+  const addOpexRow = () => {
+    setOpexRows((prev) => [
+      ...prev,
+      {
+        id: `opex-custom-${Date.now()}`,
+        lineItem: "",
+        isCustom: true,
+        make: "",
+        lease: false,
+        capacityPerDay: "",
+        quantity: "",
+        perUnitCost: "",
+      },
+    ]);
+  };
+
   const validateStep = () => {
+    const totalInvestmentNumber = parseFloat(form.totalInvestment) || 0;
+    const equityFundingNumber = parseFloat(form.equityFunding) || 0;
+    const debtFundingNumber = parseFloat(form.debtFunding) || 0;
+    const debtInterestRateNumber = parseFloat(form.debtInterestRate) || 0;
+    const amortizationYearsNumber = parseInt(form.amortizationYears, 10) || 0;
+    const amortizationMonthsNumber = parseInt(form.amortizationMonths, 10) || 0;
+    const amortizationDaysNumber = parseInt(form.amortizationDays, 10) || 0;
+
+    const splitMatchesTotal =
+      Math.abs(totalInvestmentNumber - (equityFundingNumber + debtFundingNumber)) < 0.01;
+
+    const hasValidAmortizationPeriod =
+      amortizationYearsNumber * 360 + amortizationMonthsNumber * 30 + amortizationDaysNumber > 0;
+
     if (step === 1) {
       return (
         form.projectName.trim() &&
@@ -112,21 +318,23 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       );
     }
     if (step === 3) {
-      return form.capexAmount.trim() && form.capexBreakdown.trim();
+      return capexTotal > 0;
     }
     if (step === 4) {
-      return (
-        form.opexLabor.trim() &&
-        form.opexFuel.trim() &&
-        form.opexMaintenance.trim() &&
-        form.opexLoading.trim()
-      );
+      return opexTotal > 0;
     }
     if (step === 5) {
-      return form.investmentAmount.trim() && form.investmentSource.trim();
+      return (
+        totalInvestmentNumber > 0 &&
+        equityFundingNumber >= 0 &&
+        debtFundingNumber >= 0 &&
+        splitMatchesTotal &&
+        (debtFundingNumber === 0 || debtInterestRateNumber > 0) &&
+        hasValidAmortizationPeriod
+      );
     }
     if (step === 6) {
-      return form.amortizationPeriod.trim() && (parseInt(form.amortizationPeriod, 10) || 0) > 0;
+      return hasValidAmortizationPeriod;
     }
     return false;
   };
@@ -151,6 +359,25 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
     const perDayCollectionGoal =
       collectionWindowDays > 0 ? collectionGoalPerCycle / collectionWindowDays : 0;
 
+    const opexAmountFor = (label: string) => {
+      const match = opexItems.find((row) => row.lineItem.trim().toLowerCase() === label.trim().toLowerCase());
+      return match?.amount || 0;
+    };
+
+    const opexCustomAmount = opexItems
+      .filter((row) => row.isCustom)
+      .reduce((sum, row) => sum + (row.amount || 0), 0);
+
+    const totalInvestment = parseFloat(form.totalInvestment) || 0;
+    const equityFunding = parseFloat(form.equityFunding) || 0;
+    const debtFunding = parseFloat(form.debtFunding) || 0;
+    const debtInterestRate = parseFloat(form.debtInterestRate) || 0;
+    const amortizationYearsNumber = parseInt(form.amortizationYears, 10) || 0;
+    const amortizationMonthsNumber = parseInt(form.amortizationMonths, 10) || 0;
+    const amortizationDaysNumber = parseInt(form.amortizationDays, 10) || 0;
+    const amortizationTotalDays =
+      amortizationYearsNumber * 360 + amortizationMonthsNumber * 30 + amortizationDaysNumber;
+
     const payload = {
       projectName: form.projectName.trim(),
       operatorName: form.organizationName.trim(),
@@ -170,45 +397,165 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       collectionWindowTo: form.collectionWindowTo,
       collectionDetails: form.collectionDetails.trim(),
       capex: {
-        amount: parseFloat(form.capexAmount) || 0,
-        breakdown: form.capexBreakdown.trim(),
+        amount: capexTotal,
+        items: capexItems.map((row) => ({
+          lineItem: row.lineItem,
+          make: row.make.trim(),
+          lease: row.lease,
+          capacityPerDay: row.capacityPerDay,
+          quantity: row.quantity,
+          perUnitCost: row.perUnitCost,
+          amount: row.amount,
+        })),
       },
       opex: {
-        labor: parseFloat(form.opexLabor) || 0,
-        fuel: parseFloat(form.opexFuel) || 0,
-        maintenance: parseFloat(form.opexMaintenance) || 0,
-        loading: parseFloat(form.opexLoading) || 0,
-        misc: parseFloat(form.opexMisc) || 0,
+        labor: opexAmountFor("Labour"),
+        fuel: opexAmountFor("Diesel"),
+        maintenance: opexAmountFor("Maintenance"),
+        loading: opexAmountFor("Lease amount"),
+        misc: opexAmountFor("Miscellaneous") + opexCustomAmount,
       },
       investment: {
-        amount: parseFloat(form.investmentAmount) || 0,
-        source: form.investmentSource.trim(),
+        amount: totalInvestment,
+        source: "equity_debt_mix",
+        equity: equityFunding,
+        debt: debtFunding,
+        debtInterestRate,
       },
       amortization: {
-        period: parseInt(form.amortizationPeriod) || 0,
+        period: amortizationYearsNumber,
+        years: amortizationYearsNumber,
+        months: amortizationMonthsNumber,
+        days: amortizationDaysNumber,
+        totalDays: amortizationTotalDays,
       },
       equipment: [],
     };
 
     const credentials = onCompleteOnboarding(payload);
 
-    if (projectIdFromState) {
-      const saved = readJson(STORAGE_KEYS.PROJECTS, []);
-      if (Array.isArray(saved)) {
-        const nextProjects = saved.map((project: any) => {
-          if (project?.id !== projectIdFromState) return project;
-          return {
-            ...project,
-            projectName: payload.projectName,
-            company: payload,
-            credentials,
-          };
-        });
-        writeJson(STORAGE_KEYS.PROJECTS, nextProjects);
-      }
+    setDprPayload({ ...payload, credentials });
+    setShowDPRModal(true);
+  };
+
+  const handleStartOperations = () => {
+    if (!dprPayload || !projectIdFromState) {
+      navigate("/dashboard", { replace: true });
+      return;
     }
 
+    const saved = readJson(STORAGE_KEYS.PROJECTS, []);
+    if (Array.isArray(saved)) {
+      const nextProjects = saved.map((project: any) => {
+        if (project?.id !== projectIdFromState) return project;
+        return {
+          ...project,
+          projectName: dprPayload.projectName,
+          company: dprPayload,
+          credentials: dprPayload.credentials,
+        };
+      });
+      writeJson(STORAGE_KEYS.PROJECTS, nextProjects);
+    }
+
+    setShowDPRModal(false);
     navigate("/dashboard", { replace: true });
+  };
+
+  const downloadDPR = () => {
+    if (!dprPayload) return;
+
+    const dprContent = generateDPRContent(dprPayload);
+    const element = document.createElement("a");
+    const file = new Blob([dprContent], { type: "text/plain" });
+    element.href = URL.createObjectURL(file);
+    element.download = `DPR-${dprPayload.projectName.replace(/\s+/g, "_")}-${new Date().getTime()}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const generateDPRContent = (data: any) => {
+    return `
+═══════════════════════════════════════════════════════════════════════════════
+                      DETAILED PROJECT REPORT (DPR)
+═══════════════════════════════════════════════════════════════════════════════
+
+Generated Date: ${new Date().toLocaleString()}
+
+─────────────────────────────────────────────────────────────────────────────
+1. PROJECT INFORMATION
+─────────────────────────────────────────────────────────────────────────────
+Project Name:          ${data.projectName}
+Operator Name:         ${data.operatorName}
+Site Name:             ${data.siteName}
+Organization Name:     ${data.organizationName}
+Unit Name:             ${data.unitName}
+Address:               ${data.address}
+GST Number:            ${data.gst}
+PAN Number:            ${data.pan}
+Role:                  ${data.role}
+
+─────────────────────────────────────────────────────────────────────────────
+2. COLLECTION TARGET
+─────────────────────────────────────────────────────────────────────────────
+Collection Goal Per Cycle:     ${data.collectionGoalPerCycle} tonnes
+Per Day Collection Goal:       ${data.targetTonnage.toFixed(2)} tonnes/day
+Collection Window:             ${data.collectionWindowFrom} to ${data.collectionWindowTo}
+Collection Window Days:        ${data.collectionWindowDays} days
+Collection Details:            ${data.collectionDetails}
+
+─────────────────────────────────────────────────────────────────────────────
+3. CAPEX (CAPITAL EXPENDITURE)
+─────────────────────────────────────────────────────────────────────────────
+Total CAPEX Amount: ₹ ${data.capex.amount.toLocaleString()}
+
+Equipment Details:
+${data.capex.items.map((item: any) => `
+  Line Item: ${item.lineItem}
+  Make/Vendor: ${item.make}
+  Lease: ${item.lease ? "Yes" : "No"}
+  Capacity/Day: ${item.capacityPerDay}
+  Quantity: ${item.quantity}
+  Per Unit Cost: ₹ ${item.perUnitCost.toLocaleString()}
+  Amount: ₹ ${item.amount.toLocaleString()}
+`).join("\n")}
+
+─────────────────────────────────────────────────────────────────────────────
+4. OPEX (OPERATIONAL EXPENDITURE) - MONTHLY
+─────────────────────────────────────────────────────────────────────────────
+Labour:         ₹ ${data.opex.labor.toLocaleString()}
+Diesel/Fuel:    ₹ ${data.opex.fuel.toLocaleString()}
+Lease Amount:   ₹ ${data.opex.loading.toLocaleString()}
+Maintenance:    ₹ ${data.opex.maintenance.toLocaleString()}
+Miscellaneous:  ₹ ${data.opex.misc.toLocaleString()}
+─────────────────────────────────────────────────────────────────────────────
+Total Monthly OPEX: ₹ ${(data.opex.labor + data.opex.fuel + data.opex.loading + data.opex.maintenance + data.opex.misc).toLocaleString()}
+
+─────────────────────────────────────────────────────────────────────────────
+5. INVESTMENT & FUNDING
+─────────────────────────────────────────────────────────────────────────────
+Total Investment:      ₹ ${data.investment.amount.toLocaleString()}
+Equity Funding:        ₹ ${data.investment.equity.toLocaleString()}
+Debt Funding:          ₹ ${data.investment.debt.toLocaleString()}
+Debt Interest Rate:    ${data.investment.debtInterestRate}% per annum
+
+─────────────────────────────────────────────────────────────────────────────
+6. AMORTIZATION SCHEDULE
+─────────────────────────────────────────────────────────────────────────────
+Amortization Period:   ${data.amortization.years} years, ${data.amortization.months} months, ${data.amortization.days} days
+Total Days:            ${data.amortization.totalDays} days
+
+─────────────────────────────────────────────────────────────────────────────
+7. CONTACT INFORMATION
+─────────────────────────────────────────────────────────────────────────────
+Admin Name:            ${data.adminName}
+Admin Contact:         ${data.adminContact}
+
+═══════════════════════════════════════════════════════════════════════════════
+                            END OF REPORT
+═══════════════════════════════════════════════════════════════════════════════
+`;
   };
 
   const progressPercentage = (step / 6) * 100;
@@ -220,13 +567,79 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       ? collectionGoalPerCycleNumber / collectionWindowDaysNumber
       : 0;
 
-  const capexAmountNumber = parseFloat(form.capexAmount) || 0;
-  const amortizationYears = parseInt(form.amortizationPeriod, 10) || 0;
+  const capexAmountNumber = capexTotal;
+  const amortizationYearsInput = parseInt(form.amortizationYears, 10) || 0;
+  const amortizationMonthsInput = parseInt(form.amortizationMonths, 10) || 0;
+  const amortizationDaysInput = parseInt(form.amortizationDays, 10) || 0;
+  const amortizationTotalDays =
+    amortizationYearsInput * 360 + amortizationMonthsInput * 30 + amortizationDaysInput;
+  const amortizationYears = Math.ceil(amortizationTotalDays / 360);
   const amortizationPerYear = amortizationYears > 0 ? capexAmountNumber / amortizationYears : 0;
+
+  const amortizationTotalMonths = Math.ceil(amortizationTotalDays / 30);
+  const totalInvestmentNumber = parseFloat(form.totalInvestment) || 0;
+  const equityFundingNumber = parseFloat(form.equityFunding) || 0;
+  const debtFundingNumber = parseFloat(form.debtFunding) || 0;
+  const debtInterestRateNumber = parseFloat(form.debtInterestRate) || 0;
+  const investmentSplitDifference =
+    totalInvestmentNumber - (equityFundingNumber + debtFundingNumber);
+
+  const generateAmortizationSchedule = () => {
+    if (amortizationYearsInput === 0 && amortizationTotalMonths > 0) {
+      // Monthly schedule
+      const monthlyPrincipal = debtFundingNumber > 0 ? debtFundingNumber / amortizationTotalMonths : 0;
+      const monthlyOpex = opexTotal > 0 ? opexTotal : 0;
+      const monthlyInterestRate = debtInterestRateNumber / 100 / 12;
+
+      return Array.from({ length: amortizationTotalMonths }, (_, index) => {
+        const month = index + 1;
+        const openingDebt = debtFundingNumber - monthlyPrincipal * index;
+        const interestCharges = Math.max(0, openingDebt * monthlyInterestRate);
+        const closingDebt = Math.max(0, openingDebt - monthlyPrincipal);
+
+        return {
+          period: `Month ${month}`,
+          openingDebt,
+          interest: interestCharges,
+          principal: monthlyPrincipal,
+          opex: monthlyOpex,
+          totalPayment: monthlyPrincipal + interestCharges + monthlyOpex,
+          closingDebt,
+        };
+      });
+    } else if (amortizationYearsInput > 0) {
+      // Yearly schedule
+      const yearlyPrincipal = debtFundingNumber > 0 ? debtFundingNumber / amortizationYearsInput : 0;
+      const yearlyOpex = opexTotal > 0 ? opexTotal * 12 : 0;
+      const yearlyInterestRate = debtInterestRateNumber / 100;
+
+      return Array.from({ length: amortizationYearsInput }, (_, index) => {
+        const year = index + 1;
+        const openingDebt = debtFundingNumber - yearlyPrincipal * index;
+        const interestCharges = Math.max(0, openingDebt * yearlyInterestRate);
+        const closingDebt = Math.max(0, openingDebt - yearlyPrincipal);
+
+        return {
+          period: `Year ${year}`,
+          openingDebt,
+          interest: interestCharges,
+          principal: yearlyPrincipal,
+          opex: yearlyOpex,
+          totalPayment: yearlyPrincipal + interestCharges + yearlyOpex,
+          closingDebt,
+        };
+      });
+    }
+    return [];
+  };
+
+  const amortizationSchedule = generateAmortizationSchedule();
+
+  const contentWidthClass = step === 3 || step === 4 ? "max-w-6xl" : "max-w-2xl";
 
   return (
     <div className="min-h-screen bg-white text-slate-900 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-2xl">
+      <div className={`w-full ${contentWidthClass}`}>
         {/* Header */}
         <div className="mb-12">
           <button
@@ -463,26 +876,124 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
             <div>
               <h2 className="text-xl font-semibold mb-4 text-slate-900">Project Capex Calculation</h2>
             </div>
-            <label>
-              <div className="block text-sm font-medium text-slate-700 mb-2">Total Capex Amount (₹)</div>
-              <input
-                type="number"
-                value={form.capexAmount}
-                onChange={(e) => handleChange("capexAmount", e.target.value)}
-                placeholder="e.g., 500000"
-                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
-              />
-            </label>
-            <label>
-              <div className="block text-sm font-medium text-slate-700 mb-2">Capex Breakdown</div>
-              <textarea
-                value={form.capexBreakdown}
-                onChange={(e) => handleChange("capexBreakdown", e.target.value)}
-                placeholder="e.g., Machinery: 300000, Infrastructure: 150000, Installation: 50000..."
-                rows={4}
-                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
-              />
-            </label>
+            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+                <div className="text-sm font-semibold text-slate-900">Financial model & budgeting</div>
+                <div className="text-xs text-slate-500">Enter quantity and per-unit cost to calculate amounts automatically.</div>
+              </div>
+
+              <div className="p-4 overflow-x-auto">
+                <table className="min-w-[980px] w-full table-fixed text-sm">
+                  <thead className="bg-slate-100 text-xs font-semibold text-slate-700">
+                    <tr>
+                      <th className="w-32 px-3 py-2 text-left">Line items</th>
+                      <th className="w-44 px-3 py-2 text-left">Make (company's name)</th>
+                      <th className="w-24 px-3 py-2 text-center">Lease</th>
+                      <th className="w-40 px-3 py-2 text-right">Capacity/day</th>
+                      <th className="w-24 px-3 py-2 text-right">Quantity</th>
+                      <th className="w-28 px-3 py-2 text-right">Per unit cost</th>
+                      <th className="w-28 px-3 py-2 text-right">Amount</th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-200">
+                    {capexItems.map((row) => (
+                      <tr key={row.id} className="text-slate-700">
+                        <td className="px-3 py-2">
+                          {row.isCustom ? (
+                            <input
+                              type="text"
+                              value={row.lineItem}
+                              onChange={(e) => updateCapexRow(row.id, { lineItem: e.target.value })}
+                              placeholder="New line item"
+                              className="w-full rounded-md border border-slate-300 px-2 py-1 outline-none focus:border-emerald-500"
+                            />
+                          ) : (
+                            <div className="font-medium text-slate-900">{row.lineItem}</div>
+                          )}
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={row.make}
+                            onChange={(e) => updateCapexRow(row.id, { make: e.target.value })}
+                            placeholder="e.g., John Deere"
+                            className="w-full rounded-md border border-slate-300 px-2 py-1 outline-none focus:border-emerald-500"
+                          />
+                        </td>
+
+                        <td className="px-3 py-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={row.lease}
+                            onChange={(e) => updateCapexRow(row.id, { lease: e.target.checked })}
+                            className="h-4 w-4 accent-emerald-600"
+                            aria-label={`Lease ${row.lineItem || "item"}`}
+                          />
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            min={0}
+                            value={row.capacityPerDay === 0 ? "" : row.capacityPerDay}
+                            onChange={(e) => updateCapexRow(row.id, { capacityPerDay: e.target.value })}
+                            placeholder="0"
+                            className="w-full rounded-md border border-slate-300 px-2 py-1 text-right outline-none focus:border-emerald-500"
+                          />
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            min={0}
+                            value={row.quantity === 0 ? "" : row.quantity}
+                            onChange={(e) => updateCapexRow(row.id, { quantity: e.target.value })}
+                            placeholder="0"
+                            className="w-full rounded-md border border-slate-300 px-2 py-1 text-right outline-none focus:border-emerald-500"
+                          />
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            min={0}
+                            value={row.perUnitCost === 0 ? "" : row.perUnitCost}
+                            onChange={(e) => updateCapexRow(row.id, { perUnitCost: e.target.value })}
+                            placeholder="0"
+                            className="w-full rounded-md border border-slate-300 px-2 py-1 text-right outline-none focus:border-emerald-500"
+                          />
+                        </td>
+
+                        <td className="px-3 py-2 text-right font-medium text-slate-900">
+                          ₹ {row.amount ? row.amount.toFixed(0) : "0"}
+                        </td>
+                      </tr>
+                    ))}
+
+                    <tr className="bg-slate-50">
+                      <td colSpan={6} className="px-3 py-3 text-right text-sm font-semibold text-slate-900">
+                        Total
+                      </td>
+                      <td className="px-3 py-3 text-right text-sm font-semibold text-slate-900">
+                        ₹ {capexTotal.toFixed(0)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={addCapexRow}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Add new row
+              </button>
+            </div>
           </div>
         )}
 
@@ -492,60 +1003,125 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
             <div>
               <h2 className="text-xl font-semibold mb-4 text-slate-900">Project Opex Calculation</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <label>
-                <div className="block text-sm font-medium text-slate-700 mb-2">Labor (₹/month)</div>
-                <input
-                  type="number"
-                  value={form.opexLabor}
-                  onChange={(e) => handleChange("opexLabor", e.target.value)}
-                  placeholder="0"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
-                />
-              </label>
-              <label>
-                <div className="block text-sm font-medium text-slate-700 mb-2">Fuel (₹/month)</div>
-                <input
-                  type="number"
-                  value={form.opexFuel}
-                  onChange={(e) => handleChange("opexFuel", e.target.value)}
-                  placeholder="0"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
-                />
-              </label>
+
+            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+                <div className="text-sm font-semibold text-slate-900">Monthly operating costs</div>
+                <div className="text-xs text-slate-500">Enter quantity and per-unit cost to calculate amounts automatically.</div>
+              </div>
+
+              <div className="p-4">
+                <table className="w-full table-fixed text-sm">
+                  <thead className="bg-slate-100 text-xs font-semibold text-slate-700">
+                    <tr>
+                      <th className="w-32 px-3 py-2 text-left">Line items</th>
+                      <th className="w-44 px-3 py-2 text-left">Make (company's name)</th>
+                      <th className="w-24 px-3 py-2 text-center">Lease</th>
+                      <th className="w-40 px-3 py-2 text-right">Capacity/day</th>
+                      <th className="w-24 px-3 py-2 text-right">Quantity</th>
+                      <th className="w-28 px-3 py-2 text-right">Per unit cost</th>
+                      <th className="w-28 px-3 py-2 text-right">Amount</th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-200">
+                    {opexItems.map((row) => (
+                      <tr key={row.id} className="text-slate-700">
+                        <td className="px-3 py-2">
+                          {row.isCustom ? (
+                            <input
+                              type="text"
+                              value={row.lineItem}
+                              onChange={(e) => updateOpexRow(row.id, { lineItem: e.target.value })}
+                              placeholder="New line item"
+                              className="w-full rounded-md border border-slate-300 px-2 py-1 outline-none focus:border-emerald-500"
+                            />
+                          ) : (
+                            <div className="font-medium text-slate-900">{row.lineItem}</div>
+                          )}
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={row.make}
+                            onChange={(e) => updateOpexRow(row.id, { make: e.target.value })}
+                            placeholder="e.g., Vendor name"
+                            className="w-full rounded-md border border-slate-300 px-2 py-1 outline-none focus:border-emerald-500"
+                          />
+                        </td>
+
+                        <td className="px-3 py-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={row.lease}
+                            onChange={(e) => updateOpexRow(row.id, { lease: e.target.checked })}
+                            className="h-4 w-4 accent-emerald-600"
+                            aria-label={`Lease ${row.lineItem || "item"}`}
+                          />
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            min={0}
+                            value={row.capacityPerDay === 0 ? "" : row.capacityPerDay}
+                            onChange={(e) => updateOpexRow(row.id, { capacityPerDay: e.target.value })}
+                            placeholder="0"
+                            className="w-full rounded-md border border-slate-300 px-2 py-1 text-right outline-none focus:border-emerald-500"
+                          />
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            min={0}
+                            value={row.quantity === 0 ? "" : row.quantity}
+                            onChange={(e) => updateOpexRow(row.id, { quantity: e.target.value })}
+                            placeholder="0"
+                            className="w-full rounded-md border border-slate-300 px-2 py-1 text-right outline-none focus:border-emerald-500"
+                          />
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            min={0}
+                            value={row.perUnitCost === 0 ? "" : row.perUnitCost}
+                            onChange={(e) => updateOpexRow(row.id, { perUnitCost: e.target.value })}
+                            placeholder="0"
+                            className="w-full rounded-md border border-slate-300 px-2 py-1 text-right outline-none focus:border-emerald-500"
+                          />
+                        </td>
+
+                        <td className="px-3 py-2 text-right font-medium text-slate-900">
+                          ₹ {row.amount ? row.amount.toFixed(0) : "0"}
+                        </td>
+                      </tr>
+                    ))}
+
+                    <tr className="bg-slate-50">
+                      <td colSpan={6} className="px-3 py-3 text-right text-sm font-semibold text-slate-900">
+                        Total
+                      </td>
+                      <td className="px-3 py-3 text-right text-sm font-semibold text-slate-900">
+                        ₹ {opexTotal.toFixed(0)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <label>
-                <div className="block text-sm font-medium text-slate-700 mb-2">Maintenance (₹/month)</div>
-                <input
-                  type="number"
-                  value={form.opexMaintenance}
-                  onChange={(e) => handleChange("opexMaintenance", e.target.value)}
-                  placeholder="0"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
-                />
-              </label>
-              <label>
-                <div className="block text-sm font-medium text-slate-700 mb-2">Loading (₹/month)</div>
-                <input
-                  type="number"
-                  value={form.opexLoading}
-                  onChange={(e) => handleChange("opexLoading", e.target.value)}
-                  placeholder="0"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
-                />
-              </label>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={addOpexRow}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Add item
+              </button>
             </div>
-            <label>
-              <div className="block text-sm font-medium text-slate-700 mb-2">Miscellaneous (₹/month)</div>
-              <input
-                type="number"
-                value={form.opexMisc}
-                onChange={(e) => handleChange("opexMisc", e.target.value)}
-                placeholder="0"
-                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
-              />
-            </label>
           </div>
         )}
 
@@ -553,29 +1129,117 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
         {step === 5 && (
           <div className="space-y-6 mb-8">
             <div>
-              <h2 className="text-xl font-semibold mb-4 text-slate-900">Investment</h2>
+              <h2 className="text-xl font-semibold mb-4 text-slate-900">Investment & funding split</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label>
-                <div className="block text-sm font-medium text-slate-700 mb-2">Investment Amount (₹)</div>
+                <div className="block text-sm font-medium text-slate-700 mb-2">Total investment (₹)</div>
                 <input
                   type="number"
-                  value={form.investmentAmount}
-                  onChange={(e) => handleChange("investmentAmount", e.target.value)}
+                  min={0}
+                  value={form.totalInvestment}
+                  onChange={(e) => handleChange("totalInvestment", e.target.value)}
                   placeholder="e.g., 1000000"
                   className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
                 />
               </label>
+
               <label>
-                <div className="block text-sm font-medium text-slate-700 mb-2">Investment Source</div>
+                <div className="block text-sm font-medium text-slate-700 mb-2">Equity funding (₹)</div>
                 <input
-                  type="text"
-                  value={form.investmentSource}
-                  onChange={(e) => handleChange("investmentSource", e.target.value)}
-                  placeholder="e.g., Self / Bank / Investor"
+                  type="number"
+                  min={0}
+                  value={form.equityFunding}
+                  onChange={(e) => handleChange("equityFunding", e.target.value)}
+                  placeholder="e.g., 400000"
                   className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
                 />
               </label>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label>
+                <div className="block text-sm font-medium text-slate-700 mb-2">Debt funding (₹)</div>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.debtFunding}
+                  onChange={(e) => handleChange("debtFunding", e.target.value)}
+                  placeholder="e.g., 600000"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
+                />
+              </label>
+
+              <label>
+                <div className="block text-sm font-medium text-slate-700 mb-2">Debt interest rate (% per year)</div>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.debtInterestRate}
+                  onChange={(e) => handleChange("debtInterestRate", e.target.value)}
+                  placeholder="e.g., 10.5"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
+                />
+              </label>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="text-xs font-medium text-slate-600">Funding split check</div>
+              <div className="mt-1 text-sm font-semibold text-slate-900">
+                Total entered split: ₹ {(equityFundingNumber + debtFundingNumber).toLocaleString()}
+              </div>
+              <div className={`mt-1 text-xs ${Math.abs(investmentSplitDifference) < 0.01 ? "text-emerald-700" : "text-rose-600"}`}>
+                {Math.abs(investmentSplitDifference) < 0.01
+                  ? "Equity + Debt matches Total investment."
+                  : `Difference: ₹ ${Math.abs(investmentSplitDifference).toLocaleString()}`}
+              </div>
+              {debtFundingNumber > 0 && debtInterestRateNumber <= 0 && (
+                <div className="mt-1 text-xs text-rose-600">Enter debt interest rate when debt funding is provided.</div>
+              )}
+            </div>
+
+            <div className="space-y-4 rounded-xl border border-slate-200 p-4">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Period of Ammotization</h3>
+                <p className="text-xs text-slate-500 mt-1">Enter amortization period in years, months, and days (e.g., 2 years, 0 months, 0 days).</p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <label>
+                  <div className="block text-sm font-medium text-slate-700 mb-2">Years</div>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.amortizationYears}
+                    onChange={(e) => handleChange("amortizationYears", e.target.value)}
+                    placeholder="e.g., 5"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
+                  />
+                </label>
+                <label>
+                  <div className="block text-sm font-medium text-slate-700 mb-2">Months</div>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.amortizationMonths}
+                    onChange={(e) => handleChange("amortizationMonths", e.target.value)}
+                    placeholder="e.g., 1"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
+                  />
+                </label>
+                <label>
+                  <div className="block text-sm font-medium text-slate-700 mb-2">Days</div>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.amortizationDays}
+                    onChange={(e) => handleChange("amortizationDays", e.target.value)}
+                    placeholder="e.g., 20"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
+                  />
+                </label>
+              </div>
             </div>
           </div>
         )}
@@ -586,55 +1250,64 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
             <div>
               <h2 className="text-xl font-semibold mb-4 text-slate-900">Ammotization chart</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <label>
-                <div className="block text-sm font-medium text-slate-700 mb-2">Period (years)</div>
-                <input
-                  type="number"
-                  min={1}
-                  value={form.amortizationPeriod}
-                  onChange={(e) => handleChange("amortizationPeriod", e.target.value)}
-                  placeholder="e.g., 5"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
-                />
-              </label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                <div className="text-xs font-medium text-slate-600">Capex used for chart</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">₹ {capexAmountNumber.toLocaleString()}</div>
+                <div className="text-xs font-medium text-slate-600">Period of Ammotization</div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">
+                  {amortizationYearsInput} years, {amortizationMonthsInput} months, {amortizationDaysInput} days
+                </div>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="text-xs font-medium text-slate-600">Debt funding</div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">₹ {debtFundingNumber.toLocaleString()}</div>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="text-xs font-medium text-slate-600">Debt interest rate</div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">{debtInterestRateNumber.toFixed(2)}%</div>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="text-xs font-medium text-slate-600">Monthly Opex</div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">₹ {opexTotal.toLocaleString()}</div>
               </div>
             </div>
 
             <div className="overflow-hidden rounded-xl border border-slate-200">
-              <div className="grid grid-cols-4 bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700">
-                <div>Year</div>
-                <div className="text-right">Opening</div>
-                <div className="text-right">Ammotization</div>
-                <div className="text-right">Closing</div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100">
+                      <th className="border border-slate-200 px-3 py-2 text-left text-xs font-semibold text-slate-700">Period</th>
+                      <th className="border border-slate-200 px-3 py-2 text-right text-xs font-semibold text-slate-700">Opening Debt (₹)</th>
+                      <th className="border border-slate-200 px-3 py-2 text-right text-xs font-semibold text-slate-700">Interest (₹)</th>
+                      <th className="border border-slate-200 px-3 py-2 text-right text-xs font-semibold text-slate-700">Principal (₹)</th>
+                      <th className="border border-slate-200 px-3 py-2 text-right text-xs font-semibold text-slate-700">Opex (₹)</th>
+                      <th className="border border-slate-200 px-3 py-2 text-right text-xs font-semibold text-slate-700">Total Payment (₹)</th>
+                      <th className="border border-slate-200 px-3 py-2 text-right text-xs font-semibold text-slate-700">Closing Debt (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {amortizationSchedule.length > 0 ? (
+                      amortizationSchedule.map((row, idx) => (
+                        <tr key={idx} className="border-t border-slate-200 hover:bg-slate-50">
+                          <td className="border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900">{row.period}</td>
+                          <td className="border border-slate-200 px-3 py-2 text-right text-sm text-slate-700">₹ {row.openingDebt.toFixed(0)}</td>
+                          <td className="border border-slate-200 px-3 py-2 text-right text-sm text-slate-700">₹ {row.interest.toFixed(0)}</td>
+                          <td className="border border-slate-200 px-3 py-2 text-right text-sm text-slate-700">₹ {row.principal.toFixed(0)}</td>
+                          <td className="border border-slate-200 px-3 py-2 text-right text-sm text-slate-700">₹ {row.opex.toFixed(0)}</td>
+                          <td className="border border-slate-200 px-3 py-2 text-right text-sm font-semibold text-slate-900">₹ {row.totalPayment.toFixed(0)}</td>
+                          <td className="border border-slate-200 px-3 py-2 text-right text-sm font-semibold text-slate-900">₹ {row.closingDebt.toFixed(0)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="border border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
+                          Enter a valid amortization period to preview the schedule.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-
-              {amortizationYears > 0 ? (
-                Array.from({ length: amortizationYears }, (_, index) => {
-                  const year = index + 1;
-                  const opening = capexAmountNumber - amortizationPerYear * index;
-                  const closing = Math.max(0, capexAmountNumber - amortizationPerYear * year);
-
-                  return (
-                    <div
-                      key={year}
-                      className="grid grid-cols-4 px-4 py-2 text-sm text-slate-700 border-t border-slate-200"
-                    >
-                      <div className="font-medium text-slate-900">{year}</div>
-                      <div className="text-right">₹ {opening.toFixed(0)}</div>
-                      <div className="text-right">₹ {amortizationPerYear.toFixed(0)}</div>
-                      <div className="text-right">₹ {closing.toFixed(0)}</div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="px-4 py-6 text-sm text-slate-500">
-                  Enter a period to preview the chart.
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -673,6 +1346,217 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
           You can always update these details later in the settings
         </p>
       </div>
+
+      {/* DPR Modal */}
+      {showDPRModal && dprPayload && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50">
+              <h2 className="text-2xl font-bold text-slate-900">Detailed Project Report</h2>
+              <button
+                onClick={() => setShowDPRModal(false)}
+                className="text-slate-500 hover:text-slate-700 transition"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-6 bg-white">
+              <div className="space-y-6 text-sm">
+                {/* Project Information */}
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3">Project Information</h3>
+                  <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Project Name</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.projectName}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Organization</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.organizationName}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Unit Name</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.unitName}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Address</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.address}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">GST Number</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.gst}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">PAN Number</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.pan}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Admin Name</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.adminName}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Admin Contact</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.adminContact}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Collection Target */}
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3">Collection Target</h3>
+                  <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Goal Per Cycle</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.collectionGoalPerCycle} tonnes</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Per Day Goal</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.targetTonnage.toFixed(2)} t/day</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Collection Window</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.collectionWindowFrom} to {dprPayload.collectionWindowTo}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Window Days</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.collectionWindowDays} days</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 bg-slate-50 p-4 rounded-lg">
+                    <div className="text-xs font-medium text-slate-600">Collection Details</div>
+                    <div className="mt-1 text-sm text-slate-700">{dprPayload.collectionDetails}</div>
+                  </div>
+                </div>
+
+                {/* CAPEX */}
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3">Capital Expenditure (CAPEX)</h3>
+                  <div className="bg-slate-50 p-4 rounded-lg overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-200">
+                          <th className="text-left py-2 font-semibold text-slate-900">Line Item</th>
+                          <th className="text-right py-2 font-semibold text-slate-900">Qty</th>
+                          <th className="text-right py-2 font-semibold text-slate-900">Unit Cost</th>
+                          <th className="text-right py-2 font-semibold text-slate-900">Amount (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dprPayload.capex.items.map((item: any, idx: number) => (
+                          <tr key={idx} className="border-b border-slate-200">
+                            <td className="py-2">{item.lineItem}</td>
+                            <td className="text-right">{item.quantity}</td>
+                            <td className="text-right">₹ {item.perUnitCost.toLocaleString()}</td>
+                            <td className="text-right font-semibold">₹ {item.amount.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                        <tr className="border-t-2 border-slate-900 font-semibold">
+                          <td colSpan={3} className="py-2 text-right">Total CAPEX:</td>
+                          <td className="text-right">₹ {dprPayload.capex.amount.toLocaleString()}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* OPEX */}
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3">Operational Expenditure (OPEX) - Monthly</h3>
+                  <div className="bg-slate-50 p-4 rounded-lg space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Labour</span>
+                      <span className="font-semibold text-slate-900">₹ {dprPayload.opex.labor.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Diesel/Fuel</span>
+                      <span className="font-semibold text-slate-900">₹ {dprPayload.opex.fuel.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Lease Amount</span>
+                      <span className="font-semibold text-slate-900">₹ {dprPayload.opex.loading.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Maintenance</span>
+                      <span className="font-semibold text-slate-900">₹ {dprPayload.opex.maintenance.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Miscellaneous</span>
+                      <span className="font-semibold text-slate-900">₹ {dprPayload.opex.misc.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-slate-300 pt-2 mt-2">
+                      <span className="font-semibold text-slate-900">Total Monthly OPEX</span>
+                      <span className="font-semibold text-emerald-600">₹ {(dprPayload.opex.labor + dprPayload.opex.fuel + dprPayload.opex.loading + dprPayload.opex.maintenance + dprPayload.opex.misc).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Investment */}
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3">Investment & Funding</h3>
+                  <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Total Investment</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">₹ {dprPayload.investment.amount.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Equity Funding</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">₹ {dprPayload.investment.equity.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Debt Funding</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">₹ {dprPayload.investment.debt.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-600">Debt Interest Rate</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">{dprPayload.investment.debtInterestRate}% p.a.</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Amortization */}
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3">Amortization Details</h3>
+                  <div className="bg-slate-50 p-4 rounded-lg space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Period</span>
+                      <span className="font-semibold text-slate-900">{dprPayload.amortization.years} years, {dprPayload.amortization.months} months, {dprPayload.amortization.days} days</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Total Days</span>
+                      <span className="font-semibold text-slate-900">{dprPayload.amortization.totalDays} days</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Generated Timestamp */}
+                <div className="text-center text-xs text-slate-500 border-t border-slate-200 pt-4 mt-4">
+                  Generated on {new Date().toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer - Action Buttons */}
+            <div className="flex gap-3 p-6 border-t border-slate-200 bg-slate-50">
+              <button
+                onClick={downloadDPR}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 border border-slate-300 text-slate-900 rounded-lg font-medium hover:bg-slate-200 transition"
+              >
+                <Download className="h-4 w-4" />
+                Download DPR
+              </button>
+              <button
+                onClick={handleStartOperations}
+                className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition"
+              >
+                Start Operations
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
