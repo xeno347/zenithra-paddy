@@ -22,6 +22,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
     make: string;
     lease: boolean;
     capacityPerDay: string;
+    capacityPerDayUoM: string;
     quantity: string;
     perUnitCost: string;
   };
@@ -31,7 +32,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
     lineItem: string;
     isCustom: boolean;
     make: string;
-    lease: boolean;
+    capacityPerDayUoM: string;
     capacityPerDay: string;
     quantity: string;
     perUnitCost: string;
@@ -45,6 +46,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       make: "",
       lease: false,
       capacityPerDay: "",
+      capacityPerDayUoM: "Acres/day",
       quantity: "",
       perUnitCost: "",
     },
@@ -55,6 +57,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       make: "",
       lease: false,
       capacityPerDay: "",
+      capacityPerDayUoM: "Acres/day",
       quantity: "",
       perUnitCost: "",
     },
@@ -65,6 +68,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       make: "",
       lease: false,
       capacityPerDay: "",
+      capacityPerDayUoM: "Tonnes per day",
       quantity: "",
       perUnitCost: "",
     },
@@ -75,6 +79,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       make: "",
       lease: false,
       capacityPerDay: "",
+      capacityPerDayUoM: "Tonnes per day",
       quantity: "",
       perUnitCost: "",
     },
@@ -86,7 +91,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       lineItem: "Diesel",
       isCustom: false,
       make: "",
-      lease: false,
+      capacityPerDayUoM: "Tonnes per day",
       capacityPerDay: "",
       quantity: "",
       perUnitCost: "",
@@ -96,7 +101,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       lineItem: "Labour",
       isCustom: false,
       make: "",
-      lease: false,
+      capacityPerDayUoM: "Tonnes per day",
       capacityPerDay: "",
       quantity: "",
       perUnitCost: "",
@@ -106,7 +111,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       lineItem: "Lease amount",
       isCustom: false,
       make: "",
-      lease: true,
+      capacityPerDayUoM: "Tonnes per day",
       capacityPerDay: "",
       quantity: "",
       perUnitCost: "",
@@ -116,7 +121,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       lineItem: "Maintenance",
       isCustom: false,
       make: "",
-      lease: false,
+      capacityPerDayUoM: "Tonnes per day",
       capacityPerDay: "",
       quantity: "",
       perUnitCost: "",
@@ -126,7 +131,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       lineItem: "Miscellaneous",
       isCustom: false,
       make: "",
-      lease: false,
+      capacityPerDayUoM: "Tonnes per day",
       capacityPerDay: "",
       quantity: "",
       perUnitCost: "",
@@ -142,9 +147,9 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
     adminName: "",
     adminContact: "",
     collectionGoalPerCycle: "",
+    averageOutputPerAcres: "",
     collectionWindowFrom: "",
     collectionWindowTo: "",
-    collectionDetails: "",
     opexLabor: "",
     opexFuel: "",
     opexMaintenance: "",
@@ -257,6 +262,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
         make: "",
         lease: false,
         capacityPerDay: "",
+        capacityPerDayUoM: "Acres/day",
         quantity: "",
         perUnitCost: "",
       },
@@ -271,7 +277,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
         lineItem: "",
         isCustom: true,
         make: "",
-        lease: false,
+        capacityPerDayUoM: "Tonnes per day",
         capacityPerDay: "",
         quantity: "",
         perUnitCost: "",
@@ -313,8 +319,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
         (parseFloat(form.collectionGoalPerCycle) || 0) > 0 &&
         form.collectionWindowFrom.trim() &&
         form.collectionWindowTo.trim() &&
-        windowDays > 0 &&
-        form.collectionDetails.trim()
+        windowDays > 0
       );
     }
     if (step === 3) {
@@ -325,10 +330,10 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
     }
     if (step === 5) {
       return (
-        totalInvestmentNumber > 0 &&
+        investmentRequiredAmount > 0 &&
         equityFundingNumber >= 0 &&
         debtFundingNumber >= 0 &&
-        splitMatchesTotal &&
+        Math.abs(investmentRequiredAmount - (equityFundingNumber + debtFundingNumber)) < 0.01 &&
         (debtFundingNumber === 0 || debtInterestRateNumber > 0) &&
         hasValidAmortizationPeriod
       );
@@ -340,7 +345,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
   };
 
   const handleNext = () => {
-    if (validateStep() && step < 6) {
+    if (step < 6) {
       setStep(step + 1);
     }
   };
@@ -368,7 +373,7 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       .filter((row) => row.isCustom)
       .reduce((sum, row) => sum + (row.amount || 0), 0);
 
-    const totalInvestment = parseFloat(form.totalInvestment) || 0;
+    const totalInvestment = investmentRequiredAmount;
     const equityFunding = parseFloat(form.equityFunding) || 0;
     const debtFunding = parseFloat(form.debtFunding) || 0;
     const debtInterestRate = parseFloat(form.debtInterestRate) || 0;
@@ -395,7 +400,6 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
       collectionWindowDays,
       collectionWindowFrom: form.collectionWindowFrom,
       collectionWindowTo: form.collectionWindowTo,
-      collectionDetails: form.collectionDetails.trim(),
       capex: {
         amount: capexTotal,
         items: capexItems.map((row) => ({
@@ -433,8 +437,10 @@ export default function OnboardingPage({ onCompleteOnboarding }: OnboardingPageP
     };
 
     const credentials = onCompleteOnboarding(payload);
+    const onboardingSnapshot = { ...payload, credentials };
+    writeJson(STORAGE_KEYS.ONBOARDING_SNAPSHOT, onboardingSnapshot);
 
-    setDprPayload({ ...payload, credentials });
+    setDprPayload(onboardingSnapshot);
     setShowDPRModal(true);
   };
 
@@ -503,7 +509,6 @@ Collection Goal Per Cycle:     ${data.collectionGoalPerCycle} tonnes
 Per Day Collection Goal:       ${data.targetTonnage.toFixed(2)} tonnes/day
 Collection Window:             ${data.collectionWindowFrom} to ${data.collectionWindowTo}
 Collection Window Days:        ${data.collectionWindowDays} days
-Collection Details:            ${data.collectionDetails}
 
 ─────────────────────────────────────────────────────────────────────────────
 3. CAPEX (CAPITAL EXPENDITURE)
@@ -577,12 +582,12 @@ Admin Contact:         ${data.adminContact}
   const amortizationPerYear = amortizationYears > 0 ? capexAmountNumber / amortizationYears : 0;
 
   const amortizationTotalMonths = Math.ceil(amortizationTotalDays / 30);
-  const totalInvestmentNumber = parseFloat(form.totalInvestment) || 0;
+  const investmentRequiredAmount = capexTotal + opexTotal;
   const equityFundingNumber = parseFloat(form.equityFunding) || 0;
   const debtFundingNumber = parseFloat(form.debtFunding) || 0;
   const debtInterestRateNumber = parseFloat(form.debtInterestRate) || 0;
   const investmentSplitDifference =
-    totalInvestmentNumber - (equityFundingNumber + debtFundingNumber);
+    investmentRequiredAmount - (equityFundingNumber + debtFundingNumber);
 
   const generateAmortizationSchedule = () => {
     if (amortizationYearsInput === 0 && amortizationTotalMonths > 0) {
@@ -780,93 +785,154 @@ Admin Contact:         ${data.adminContact}
             <div>
               <h2 className="text-xl font-semibold mb-4 text-slate-900">Collection Target</h2>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <label>
-                <div className="block text-sm font-medium text-slate-700 mb-2">
-                  Collection goal per cycle (tonnes)
-                </div>
-                <input
-                  type="number"
-                  min={0}
-                  value={form.collectionGoalPerCycle}
-                  onChange={(e) => handleChange("collectionGoalPerCycle", e.target.value)}
-                  placeholder="e.g., 600"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
-                />
-                <div className="mt-1 text-xs text-slate-500">Total target for the full cycle.</div>
-              </label>
 
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                <div className="text-xs font-medium text-slate-600">Per day goal (tonnes/day)</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {collectionWindowDaysNumber > 0 ? perDayCollectionGoal.toFixed(2) : "—"}
+            {/* Section 1: Collection Inputs */}
+            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+                <div className="text-sm font-semibold text-slate-900">Collection Goals</div>
+                <div className="text-xs text-slate-500">Enter your collection and yield targets.</div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
+                <label>
+                  <div className="block text-sm font-medium text-slate-700 mb-2">
+                    Collection goal per cycle (tonnes)
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.collectionGoalPerCycle}
+                    onChange={(e) => handleChange("collectionGoalPerCycle", e.target.value)}
+                    placeholder="e.g., 600"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
+                  />
+                  <div className="mt-1 text-xs text-slate-500">Total target for the full cycle.</div>
+                </label>
+
+                <label>
+                  <div className="block text-sm font-medium text-slate-700 mb-2">Average output per acres (Tonnes)</div>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={form.averageOutputPerAcres}
+                    onChange={(e) => handleChange("averageOutputPerAcres", e.target.value)}
+                    placeholder="e.g., 2.5"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
+                  />
+                  <div className="mt-1 text-xs text-slate-500">Expected yield per acre in tonnes.</div>
+                </label>
+              </div>
+            </div>
+
+            {/* Section 2: Collection Window */}
+            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+                <div className="text-sm font-semibold text-slate-900">Collection Window</div>
+                <div className="text-xs text-slate-500">Specify the period for collection activities.</div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
+                <label>
+                  <div className="block text-sm font-medium text-slate-700 mb-2">From date</div>
+                  <input
+                    type="date"
+                    value={form.collectionWindowFrom}
+                    onChange={(e) => handleChange("collectionWindowFrom", e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:outline-none focus:border-emerald-500 transition"
+                  />
+                </label>
+
+                <label>
+                  <div className="block text-sm font-medium text-slate-700 mb-2">To date</div>
+                  <input
+                    type="date"
+                    value={form.collectionWindowTo}
+                    onChange={(e) => handleChange("collectionWindowTo", e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:outline-none focus:border-emerald-500 transition"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Section 3: Calculated Values */}
+            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+                <div className="text-sm font-semibold text-slate-900">Calculated Metrics</div>
+                <div className="text-xs text-slate-500">Automatically computed from your inputs.</div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="text-xs font-medium text-slate-600">Land required</div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900">
+                    {parseFloat(form.averageOutputPerAcres) > 0 ? `${(parseFloat(form.collectionGoalPerCycle) / parseFloat(form.averageOutputPerAcres)).toFixed(2)} acres` : "—"}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-500">
+                   
+                  </div>
                 </div>
-                <div className="mt-1 text-xs text-slate-500">
-                  Formula: collection goal / days in the collection window
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="text-xs font-medium text-slate-600">Per day goal</div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900">
+                    {collectionWindowDaysNumber > 0 ? `${perDayCollectionGoal.toFixed(2)} tonnes/day` : "—"}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-500">
+                   
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="text-xs font-medium text-slate-600">Avg collection area per day </div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900">
+                    {parseFloat(form.averageOutputPerAcres) > 0 && collectionWindowDaysNumber > 0 ? `${(perDayCollectionGoal / parseFloat(form.averageOutputPerAcres)).toFixed(2)} acres/day` : "—"}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-500">
+                   
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <label>
-                <div className="block text-sm font-medium text-slate-700 mb-2">Collection window (from)</div>
-                <input
-                  type="date"
-                  value={form.collectionWindowFrom}
-                  onChange={(e) => handleChange("collectionWindowFrom", e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:outline-none focus:border-emerald-500 transition"
-                />
-              </label>
-
-              <label>
-                <div className="block text-sm font-medium text-slate-700 mb-2">Collection window (to)</div>
-                <input
-                  type="date"
-                  value={form.collectionWindowTo}
-                  onChange={(e) => handleChange("collectionWindowTo", e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:outline-none focus:border-emerald-500 transition"
-                />
-              </label>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-                <div className="text-sm font-semibold text-slate-900">Collection summary</div>
-                <div className="text-xs text-slate-500">
+            {/* Section 4: Collection Summary */}
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 overflow-hidden">
+              <div className="px-4 py-3 bg-emerald-100 border-b border-emerald-200">
+                <div className="text-sm font-semibold text-emerald-900">Collection Summary</div>
+                <div className="text-xs text-emerald-700">
                   Window days use the 30/360 convention (e.g., 30 Mar to 30 May = 60 days).
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4 px-4 py-4">
+              <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-5">
                 <div>
-                  <div className="text-xs font-medium text-slate-500">Window days</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900">
+                  <div className="text-xs font-medium text-emerald-700">Window days</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-900">
                     {collectionWindowDaysNumber > 0 ? collectionWindowDaysNumber : "—"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-medium text-slate-500">Goal per cycle</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900">
+                  <div className="text-xs font-medium text-emerald-700">Goal per cycle</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-900">
                     {collectionGoalPerCycleNumber > 0 ? `${collectionGoalPerCycleNumber.toFixed(0)} t` : "—"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-medium text-slate-500">Per day goal</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900">
+                  <div className="text-xs font-medium text-emerald-700">Per day goal</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-900">
                     {collectionWindowDaysNumber > 0 ? `${perDayCollectionGoal.toFixed(2)} t/day` : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-emerald-700">Land required</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-900">
+                    {parseFloat(form.averageOutputPerAcres) > 0 ? `${(parseFloat(form.collectionGoalPerCycle) / parseFloat(form.averageOutputPerAcres)).toFixed(2)} ac` : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-emerald-700">Avg area per day</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-900">
+                    {parseFloat(form.averageOutputPerAcres) > 0 && collectionWindowDaysNumber > 0 ? `${(perDayCollectionGoal / parseFloat(form.averageOutputPerAcres)).toFixed(2)} ac/day` : "—"}
                   </div>
                 </div>
               </div>
             </div>
-            <label>
-              <div className="block text-sm font-medium text-slate-700 mb-2">Collection Details</div>
-              <textarea
-                value={form.collectionDetails}
-                onChange={(e) => handleChange("collectionDetails", e.target.value)}
-                placeholder="Describe your collection process, locations, and methods..."
-                rows={4}
-                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
-              />
-            </label>
           </div>
         )}
 
@@ -876,6 +942,46 @@ Admin Contact:         ${data.adminContact}
             <div>
               <h2 className="text-xl font-semibold mb-4 text-slate-900">Project Capex Calculation</h2>
             </div>
+
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 overflow-hidden">
+              <div className="px-4 py-3 bg-emerald-100 border-b border-emerald-200">
+                <div className="text-sm font-semibold text-emerald-900">Collection Summary</div>
+                <div className="text-xs text-emerald-700">Reference metrics from Step 2 for CAPEX planning.</div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-5">
+                <div>
+                  <div className="text-xs font-medium text-emerald-700">Window days</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-900">
+                    {collectionWindowDaysNumber > 0 ? collectionWindowDaysNumber : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-emerald-700">Goal per cycle</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-900">
+                    {collectionGoalPerCycleNumber > 0 ? `${collectionGoalPerCycleNumber.toFixed(0)} t` : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-emerald-700">Per day goal</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-900">
+                    {collectionWindowDaysNumber > 0 ? `${perDayCollectionGoal.toFixed(2)} t/day` : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-emerald-700">Land required</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-900">
+                    {parseFloat(form.averageOutputPerAcres) > 0 ? `${(parseFloat(form.collectionGoalPerCycle) / parseFloat(form.averageOutputPerAcres)).toFixed(2)} ac` : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-emerald-700">Avg area per day</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-900">
+                    {parseFloat(form.averageOutputPerAcres) > 0 && collectionWindowDaysNumber > 0 ? `${(perDayCollectionGoal / parseFloat(form.averageOutputPerAcres)).toFixed(2)} ac/day` : "—"}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
               <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
                 <div className="text-sm font-semibold text-slate-900">Financial model & budgeting</div>
@@ -883,23 +989,23 @@ Admin Contact:         ${data.adminContact}
               </div>
 
               <div className="p-4 overflow-x-auto">
-                <table className="min-w-[980px] w-full table-fixed text-sm">
-                  <thead className="bg-slate-100 text-xs font-semibold text-slate-700">
-                    <tr>
-                      <th className="w-32 px-3 py-2 text-left">Line items</th>
-                      <th className="w-44 px-3 py-2 text-left">Make (company's name)</th>
-                      <th className="w-24 px-3 py-2 text-center">Lease</th>
-                      <th className="w-40 px-3 py-2 text-right">Capacity/day</th>
-                      <th className="w-24 px-3 py-2 text-right">Quantity</th>
-                      <th className="w-28 px-3 py-2 text-right">Per unit cost</th>
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-slate-100 text-xs font-semibold text-slate-700 border-b border-slate-300">
+                      <th className="w-32 px-3 py-2 text-left border-r border-slate-200">Line items</th>
+                      <th className="w-40 px-3 py-2 text-left border-r border-slate-200">Make (company's name)</th>
+                      <th className="w-28 px-3 py-2 text-left border-r border-slate-200">UoM</th>
+                      <th className="w-28 px-3 py-2 text-right border-r border-slate-200">Capacity</th>
+                      <th className="w-24 px-3 py-2 text-right border-r border-slate-200">Quantity</th>
+                      <th className="w-28 px-3 py-2 text-right border-r border-slate-200">Per unit cost</th>
                       <th className="w-28 px-3 py-2 text-right">Amount</th>
                     </tr>
                   </thead>
 
                   <tbody className="divide-y divide-slate-200">
                     {capexItems.map((row) => (
-                      <tr key={row.id} className="text-slate-700">
-                        <td className="px-3 py-2">
+                      <tr key={row.id} className="hover:bg-slate-50 text-slate-700">
+                        <td className="px-3 py-2 border-r border-slate-200">
                           {row.isCustom ? (
                             <input
                               type="text"
@@ -913,7 +1019,7 @@ Admin Contact:         ${data.adminContact}
                           )}
                         </td>
 
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 border-r border-slate-200">
                           <input
                             type="text"
                             value={row.make}
@@ -923,28 +1029,61 @@ Admin Contact:         ${data.adminContact}
                           />
                         </td>
 
-                        <td className="px-3 py-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={row.lease}
-                            onChange={(e) => updateCapexRow(row.id, { lease: e.target.checked })}
-                            className="h-4 w-4 accent-emerald-600"
-                            aria-label={`Lease ${row.lineItem || "item"}`}
-                          />
+                        <td className="px-3 py-2 border-r border-slate-200">
+                          {!row.isCustom ? (
+                            <div className="text-sm text-slate-900 font-medium">
+                              {row.lineItem === "Slasher" || row.lineItem === "Racker"
+                                ? "Acres/day"
+                                : row.lineItem === "Bailer" || row.lineItem === "Loader"
+                                ? "Tonnes per day"
+                                : row.capacityPerDayUoM}
+                            </div>
+                          ) : (
+                            <select
+                              value={row.capacityPerDayUoM}
+                              onChange={(e) => updateCapexRow(row.id, { capacityPerDayUoM: e.target.value })}
+                              className="w-full rounded-md border border-slate-300 px-2 py-1 outline-none focus:border-emerald-500 text-sm"
+                            >
+                              <option value="Acres/day">Acres/day</option>
+                              <option value="Tonnes per day">Tonnes/day</option>
+                              <option value="Acres">Acres</option>
+                              <option value="Tonnes">Tonnes</option>
+                              <option value="Tonnes/acres">Tonnes/acres</option>
+                              <option value="acres/tonne">Acres/tonne</option>
+                              <option value="others">Others</option>
+                            </select>
+                          )}
                         </td>
 
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 text-right border-r border-slate-200">
                           <input
                             type="number"
                             min={0}
+                            step="0.01"
                             value={row.capacityPerDay === 0 ? "" : row.capacityPerDay}
-                            onChange={(e) => updateCapexRow(row.id, { capacityPerDay: e.target.value })}
+                            onChange={(e) => {
+                              const capacityValue = e.target.value;
+                              updateCapexRow(row.id, { capacityPerDay: capacityValue });
+                              
+                              // Auto-calculate quantity for predefined items.
+                              if (!row.isCustom && capacityValue) {
+                                const capacityNum = parseFloat(capacityValue);
+                                if (capacityNum > 0 && collectionWindowDaysNumber > 0 && parseFloat(form.averageOutputPerAcres) > 0) {
+                                  const isBailerOrLoader = row.lineItem === "Bailer" || row.lineItem === "Loader";
+                                  const quickMathBase = isBailerOrLoader
+                                    ? perDayCollectionGoal
+                                    : perDayCollectionGoal / parseFloat(form.averageOutputPerAcres);
+                                  const calculatedQuantity = String(Math.ceil(quickMathBase / capacityNum));
+                                  updateCapexRow(row.id, { quantity: calculatedQuantity });
+                                }
+                              }
+                            }}
                             placeholder="0"
                             className="w-full rounded-md border border-slate-300 px-2 py-1 text-right outline-none focus:border-emerald-500"
                           />
                         </td>
 
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 text-right border-r border-slate-200">
                           <input
                             type="number"
                             min={0}
@@ -955,7 +1094,7 @@ Admin Contact:         ${data.adminContact}
                           />
                         </td>
 
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 text-right border-r border-slate-200">
                           <input
                             type="number"
                             min={0}
@@ -972,13 +1111,9 @@ Admin Contact:         ${data.adminContact}
                       </tr>
                     ))}
 
-                    <tr className="bg-slate-50">
-                      <td colSpan={6} className="px-3 py-3 text-right text-sm font-semibold text-slate-900">
-                        Total
-                      </td>
-                      <td className="px-3 py-3 text-right text-sm font-semibold text-slate-900">
-                        ₹ {capexTotal.toFixed(0)}
-                      </td>
+                    <tr className="bg-slate-50 font-semibold text-slate-900 border-t-2 border-slate-300">
+                      <td colSpan={6} className="px-3 py-3 text-right">Total</td>
+                      <td className="px-3 py-3 text-right">₹ {capexTotal.toFixed(0)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1011,23 +1146,23 @@ Admin Contact:         ${data.adminContact}
               </div>
 
               <div className="p-4">
-                <table className="w-full table-fixed text-sm">
-                  <thead className="bg-slate-100 text-xs font-semibold text-slate-700">
-                    <tr>
-                      <th className="w-32 px-3 py-2 text-left">Line items</th>
-                      <th className="w-44 px-3 py-2 text-left">Make (company's name)</th>
-                      <th className="w-24 px-3 py-2 text-center">Lease</th>
-                      <th className="w-40 px-3 py-2 text-right">Capacity/day</th>
-                      <th className="w-24 px-3 py-2 text-right">Quantity</th>
-                      <th className="w-28 px-3 py-2 text-right">Per unit cost</th>
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-slate-100 text-xs font-semibold text-slate-700 border-b border-slate-300">
+                      <th className="w-32 px-3 py-2 text-left border-r border-slate-200">Line items</th>
+                      <th className="w-44 px-3 py-2 text-left border-r border-slate-200">Make (company's name)</th>
+                      <th className="w-28 px-3 py-2 text-left border-r border-slate-200">UoM</th>
+                      <th className="w-40 px-3 py-2 text-right border-r border-slate-200">Capacity</th>
+                      <th className="w-24 px-3 py-2 text-right border-r border-slate-200">Quantity</th>
+                      <th className="w-28 px-3 py-2 text-right border-r border-slate-200">Per unit cost</th>
                       <th className="w-28 px-3 py-2 text-right">Amount</th>
                     </tr>
                   </thead>
 
                   <tbody className="divide-y divide-slate-200">
                     {opexItems.map((row) => (
-                      <tr key={row.id} className="text-slate-700">
-                        <td className="px-3 py-2">
+                      <tr key={row.id} className="hover:bg-slate-50 text-slate-700">
+                        <td className="px-3 py-2 border-r border-slate-200">
                           {row.isCustom ? (
                             <input
                               type="text"
@@ -1041,7 +1176,7 @@ Admin Contact:         ${data.adminContact}
                           )}
                         </td>
 
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 border-r border-slate-200">
                           <input
                             type="text"
                             value={row.make}
@@ -1051,17 +1186,23 @@ Admin Contact:         ${data.adminContact}
                           />
                         </td>
 
-                        <td className="px-3 py-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={row.lease}
-                            onChange={(e) => updateOpexRow(row.id, { lease: e.target.checked })}
-                            className="h-4 w-4 accent-emerald-600"
-                            aria-label={`Lease ${row.lineItem || "item"}`}
-                          />
+                        <td className="px-3 py-2 border-r border-slate-200">
+                          <select
+                            value={row.capacityPerDayUoM}
+                            onChange={(e) => updateOpexRow(row.id, { capacityPerDayUoM: e.target.value })}
+                            className="w-full rounded-md border border-slate-300 px-2 py-1 outline-none focus:border-emerald-500 text-sm"
+                          >
+                            <option value="Acres/day">Acres/day</option>
+                            <option value="Tonnes per day">Tonnes/day</option>
+                            <option value="Acres">Acres</option>
+                            <option value="Tonnes">Tonnes</option>
+                            <option value="Tonnes/acres">Tonnes/acres</option>
+                            <option value="acres/tonne">Acres/tonne</option>
+                            <option value="others">Others</option>
+                          </select>
                         </td>
 
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 text-right border-r border-slate-200">
                           <input
                             type="number"
                             min={0}
@@ -1072,7 +1213,7 @@ Admin Contact:         ${data.adminContact}
                           />
                         </td>
 
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 text-right border-r border-slate-200">
                           <input
                             type="number"
                             min={0}
@@ -1083,7 +1224,7 @@ Admin Contact:         ${data.adminContact}
                           />
                         </td>
 
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 text-right border-r border-slate-200">
                           <input
                             type="number"
                             min={0}
@@ -1100,13 +1241,9 @@ Admin Contact:         ${data.adminContact}
                       </tr>
                     ))}
 
-                    <tr className="bg-slate-50">
-                      <td colSpan={6} className="px-3 py-3 text-right text-sm font-semibold text-slate-900">
-                        Total
-                      </td>
-                      <td className="px-3 py-3 text-right text-sm font-semibold text-slate-900">
-                        ₹ {opexTotal.toFixed(0)}
-                      </td>
+                    <tr className="bg-slate-50 font-semibold text-slate-900 border-t-2 border-slate-300">
+                      <td colSpan={6} className="px-3 py-3 text-right">Total</td>
+                      <td className="px-3 py-3 text-right">₹ {opexTotal.toFixed(0)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1134,15 +1271,15 @@ Admin Contact:         ${data.adminContact}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label>
-                <div className="block text-sm font-medium text-slate-700 mb-2">Total investment (₹)</div>
+                <div className="block text-sm font-medium text-slate-700 mb-2">Investment Required (₹)</div>
                 <input
                   type="number"
                   min={0}
-                  value={form.totalInvestment}
-                  onChange={(e) => handleChange("totalInvestment", e.target.value)}
-                  placeholder="e.g., 1000000"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
+                  value={investmentRequiredAmount.toFixed(0)}
+                  readOnly
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:outline-none"
                 />
+                <div className="mt-1 text-xs text-slate-500">Auto-calculated from CAPEX + OPEX in Steps 3 and 4.</div>
               </label>
 
               <label>
@@ -1192,7 +1329,7 @@ Admin Contact:         ${data.adminContact}
               </div>
               <div className={`mt-1 text-xs ${Math.abs(investmentSplitDifference) < 0.01 ? "text-emerald-700" : "text-rose-600"}`}>
                 {Math.abs(investmentSplitDifference) < 0.01
-                  ? "Equity + Debt matches Total investment."
+                  ? "Equity + Debt matches Investment Required."
                   : `Difference: ₹ ${Math.abs(investmentSplitDifference).toLocaleString()}`}
               </div>
               {debtFundingNumber > 0 && debtInterestRateNumber <= 0 && (
@@ -1325,8 +1462,7 @@ Admin Contact:         ${data.adminContact}
           {step < 6 ? (
             <button
               onClick={handleNext}
-              disabled={!validateStep()}
-              className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition flex items-center justify-center gap-2"
             >
               Next <ChevronRight className="h-4 w-4" />
             </button>

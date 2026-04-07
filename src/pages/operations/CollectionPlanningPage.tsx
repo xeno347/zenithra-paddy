@@ -8,6 +8,8 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import {
   CalendarDays,
+  ChevronDown,
+  ChevronUp,
   Clock3,
   GitBranch,
   Lock,
@@ -192,6 +194,7 @@ function RoutingLayer({ locked }: { locked: boolean }) {
 export default function CollectionPlanningPage() {
   const savedClusterConfig = getSavedLandClusterConfig(3, 8);
   const [locked, setLocked] = useState(false);
+  const [isConfigExpanded, setIsConfigExpanded] = useState(false);
   const [selectedClusterId, setSelectedClusterId] = useState<string>("");
   const [configurationSaved, setConfigurationSaved] = useState(false);
   const [planLaunched, setPlanLaunched] = useState(false);
@@ -252,6 +255,14 @@ export default function CollectionPlanningPage() {
     if (!selectedCluster) return;
     setWorkingAreaAcres(Number(selectedClusterArea.toFixed(2)));
   }, [selectedCluster, selectedClusterArea]);
+
+  useEffect(() => {
+    if (!selectedCluster) {
+      setIsConfigExpanded(false);
+      return;
+    }
+    setIsConfigExpanded(true);
+  }, [selectedCluster]);
 
   const groupIds = useMemo(
     () => Array.from({ length: groupCount }, (_, idx) => toGroupId(idx)),
@@ -424,41 +435,52 @@ export default function CollectionPlanningPage() {
         </div>
       </section>
 
-      <section className={`relative rounded-2xl border border-slate-200 bg-white p-5 shadow-soft ${!selectedCluster ? "blur-[1px]" : ""}`}>
-        {!selectedCluster && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/30 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-2">
-              <Lock className="h-10 w-10 text-slate-400" />
-              <div className="text-sm font-semibold text-slate-600">Select a cluster to configure</div>
-            </div>
-          </div>
-        )}
-        
-        <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <section className="relative rounded-2xl border border-slate-700 bg-black p-5 text-white shadow-soft">
+        <div className="flex flex-col gap-2 border-b border-slate-700 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <RouteIcon className="h-4 w-4 text-emerald-700" />
-            <div className="text-base font-semibold text-slate-900">Configuration Setup</div>
+            <div className="text-base font-semibold text-white">Configuration Setup</div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setLocked((v) => !v)}
-            disabled={!selectedCluster}
-            className={
-              locked && selectedCluster
-                ? "inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-white"
-                : "inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            }
-          >
-            {locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-            {locked ? "Locked" : "Lock configuration"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsConfigExpanded((prev) => !prev)}
+              disabled={!selectedCluster}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isConfigExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {isConfigExpanded ? "Collapse" : "Expand"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setLocked((v) => !v)}
+              disabled={!selectedCluster || !isConfigExpanded}
+              className={
+                locked && selectedCluster
+                  ? "inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-white"
+                  : "inline-flex items-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              }
+            >
+              {locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+              {locked ? "Locked" : "Lock configuration"}
+            </button>
+          </div>
         </div>
 
+        {!selectedCluster && (
+          <div className="mt-3 text-xs font-medium text-slate-300">
+            Select a cluster to auto-expand this section.
+          </div>
+        )}
+
+        {isConfigExpanded && (
+        <>
         <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="space-y-4 xl:col-span-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
+            <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
               <Tractor className="h-3.5 w-3.5 text-emerald-700" />
               <span>Working area (acres)</span>
             </div>
@@ -474,13 +496,13 @@ export default function CollectionPlanningPage() {
                   setPlanLaunched(false);
                 }}
                 disabled={locked || !selectedCluster}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
+                className="w-full rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:ring-4 focus:ring-emerald-900/40 disabled:bg-slate-800/60"
               />
             </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
+            <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
               <Clock3 className="h-3.5 w-3.5 text-sky-700" />
               <span>Working hours</span>
             </div>
@@ -495,31 +517,31 @@ export default function CollectionPlanningPage() {
                   setPlanLaunched(false);
                 }}
                 disabled={locked || !selectedCluster}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
+                className="w-full rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:ring-4 focus:ring-emerald-900/40 disabled:bg-slate-800/60"
               />
             </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
+            <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
               <GitBranch className="h-3.5 w-3.5 text-amber-700" />
               <span>Vehicle groups setup</span>
             </div>
             <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">No. of groups</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">No. of groups</div>
                 <input
                   type="number"
                   min={1}
                   value={groupCount}
                   onChange={(e) => updateGroupCount(Number(e.target.value))}
                   disabled={locked || !selectedCluster}
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:ring-4 focus:ring-emerald-900/40 disabled:bg-slate-800/60"
                 />
               </div>
               {groupIds.map((groupId, idx) => (
                 <div key={groupId}>
-                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">{`Group ${idx + 1} name`}</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">{`Group ${idx + 1} name`}</div>
                   <input
                     type="text"
                     value={groupNames[groupId] || `Group ${idx + 1}`}
@@ -530,7 +552,7 @@ export default function CollectionPlanningPage() {
                       setPlanLaunched(false);
                     }}
                     disabled={locked || !selectedCluster}
-                    className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-emerald-100 disabled:bg-slate-50"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:ring-4 focus:ring-emerald-900/40 disabled:bg-slate-800/60"
                   />
                 </div>
               ))}
@@ -538,14 +560,14 @@ export default function CollectionPlanningPage() {
           </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 xl:col-span-8">
-          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700">
-            <GitBranch className="h-3.5 w-3.5 text-slate-600" />
+          <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-3 xl:col-span-8">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-200">
+            <GitBranch className="h-3.5 w-3.5 text-slate-300" />
             <span>Fleet Decision Pipeline</span>
           </div>
           <div className="mt-2 overflow-x-auto">
             <div className="min-w-[900px]">
-              <div className="grid grid-cols-12 rounded-lg bg-slate-100 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+              <div className="grid grid-cols-12 rounded-lg bg-slate-800 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-slate-200">
                 <div className="col-span-2">Process Step</div>
                 <div className="col-span-2">Driver</div>
                 <div className="col-span-2">Fleet</div>
@@ -556,13 +578,13 @@ export default function CollectionPlanningPage() {
 
               <div className="mt-2 space-y-2">
                 {fleetActivities.map((activity, index) => (
-                  <div key={activity.id} className="grid grid-cols-12 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 transition hover:-translate-y-[1px] hover:border-teal-200 hover:shadow-sm">
+                  <div key={activity.id} className="grid grid-cols-12 items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 transition hover:-translate-y-[1px] hover:border-teal-500 hover:shadow-sm">
                     <div className="col-span-2 flex min-w-0 items-center gap-1.5">
                       <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[9px] font-bold text-emerald-700">
                         {index + 1}
                       </div>
-                      <div className="truncate text-xs font-semibold text-slate-800">{activity.label}</div>
-                      {index < fleetActivities.length - 1 ? <span className="text-[10px] text-slate-300">{">"}</span> : null}
+                      <div className="truncate text-xs font-semibold text-white">{activity.label}</div>
+                      {index < fleetActivities.length - 1 ? <span className="text-[10px] text-slate-500">{">"}</span> : null}
                     </div>
 
                     <div className="col-span-2">
@@ -570,7 +592,7 @@ export default function CollectionPlanningPage() {
                         value={fleetDecision[activity.id].driverId}
                         onChange={(e) => updateFleetDecision(activity.id, "driverId", e.target.value)}
                         disabled={locked || !selectedCluster}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-50"
+                        className="w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white outline-none focus:ring-2 focus:ring-emerald-900/40 disabled:bg-slate-800/60"
                       >
                         <option value="">Select driver</option>
                         {availableDrivers.map((driver) => (
@@ -586,7 +608,7 @@ export default function CollectionPlanningPage() {
                         value={fleetDecision[activity.id].fleetId}
                         onChange={(e) => updateFleetDecision(activity.id, "fleetId", e.target.value)}
                         disabled={locked || !selectedCluster}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-50"
+                        className="w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white outline-none focus:ring-2 focus:ring-emerald-900/40 disabled:bg-slate-800/60"
                       >
                         <option value="">Select fleet</option>
                         {availableFleets.map((fleet) => (
@@ -602,7 +624,7 @@ export default function CollectionPlanningPage() {
                         value={fleetDecision[activity.id].groupId}
                         onChange={(e) => updateFleetDecision(activity.id, "groupId", e.target.value)}
                         disabled={locked || !selectedCluster}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-50"
+                        className="w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white outline-none focus:ring-2 focus:ring-emerald-900/40 disabled:bg-slate-800/60"
                       >
                         {groupIds.map((groupId, idx) => (
                           <option key={groupId} value={groupId}>
@@ -626,7 +648,7 @@ export default function CollectionPlanningPage() {
                           )
                         }
                         disabled={locked || !selectedCluster}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-50"
+                        className="w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white outline-none focus:ring-2 focus:ring-emerald-900/40 disabled:bg-slate-800/60"
                       />
                     </div>
 
@@ -635,7 +657,7 @@ export default function CollectionPlanningPage() {
                         value={fleetDecision[activity.id].usageIntent}
                         onChange={(e) => updateFleetDecision(activity.id, "usageIntent", e.target.value)}
                         disabled={locked || !selectedCluster}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-50"
+                        className="w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white outline-none focus:ring-2 focus:ring-emerald-900/40 disabled:bg-slate-800/60"
                       >
                         {usageIntentOptions.map((usage) => (
                           <option key={usage} value={usage}>
@@ -655,7 +677,10 @@ export default function CollectionPlanningPage() {
         <div className="mt-4 flex justify-end">
           <button
             type="button"
-            onClick={() => setConfigurationSaved(true)}
+            onClick={() => {
+              setConfigurationSaved(true);
+              setIsConfigExpanded(false);
+            }}
             disabled={!selectedCluster || locked}
             className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-primary to-emerald-600 px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -663,6 +688,8 @@ export default function CollectionPlanningPage() {
             Save configuration
           </button>
         </div>
+        </>
+        )}
       </section>
 
       <section className={`relative rounded-2xl border border-slate-200 bg-white p-5 shadow-soft ${!configurationSaved ? "blur-[1px]" : ""}`}>

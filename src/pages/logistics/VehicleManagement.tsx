@@ -6,6 +6,8 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getBaseUrl } from '@/lib/config';
+import { STORAGE_KEYS } from '@/lib/config/storageKeys';
+import { writeJson } from '@/lib/storage/jsonStorage';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -250,6 +252,10 @@ const VehicleManagement = () => {
       });
 
       setVehicles(mapped);
+      writeJson(
+        STORAGE_KEYS.VEHICLES,
+        mapped.map((vehicle) => ({ id: vehicle.id, registrationNo: vehicle.registrationNo }))
+      );
       setIsLoadingVehicles(false);
       return;
     }
@@ -299,9 +305,14 @@ const VehicleManagement = () => {
       });
 
       setVehicles(mapped);
+      writeJson(
+        STORAGE_KEYS.VEHICLES,
+        mapped.map((vehicle) => ({ id: vehicle.id, registrationNo: vehicle.registrationNo }))
+      );
     } catch (error: any) {
       toast.error(error?.message || 'Failed to load vehicles');
       setVehicles([]);
+      writeJson(STORAGE_KEYS.VEHICLES, []);
     } finally {
       setIsLoadingVehicles(false);
     }

@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ErpLayout from "./layout/ErpLayout";
+import FinancialsPage from "./pages/financials/FinancialsPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import CreateProjectPage from "./pages/create-project/CreateProjectPage";
 import OnboardingPage from "./pages/onboarding/OnboardingPage";
@@ -13,6 +14,7 @@ import LandClusterPage from "./pages/operations/LandClusterPage";
 import LogisticsManagement from "./pages/logistics/LogisticsManagement";
 import FleetChart from "./pages/logistics/FleetChart";
 import VehicleManagement from "./pages/logistics/VehicleManagement";
+import WeighmentPage from "./pages/logistics/WeighmentPage";
 import { useCompanySession } from "./hooks/useCompanySession";
 import RequirePermission from "./context/auth/RequirePermission";
 import { usePermissions } from "./context/auth/usePermissions";
@@ -80,6 +82,15 @@ export default function App() {
           />
 
           <Route
+            path="/financials"
+            element={
+              <RequirePermission allow={perms.can(PERMISSIONS.VIEW_FINANCIALS)}>
+                <FinancialsPage company={company} />
+              </RequirePermission>
+            }
+          />
+
+          <Route
             path="/hrms"
             element={
               <RequirePermission allow={perms.can(PERMISSIONS.MANAGE_SETTINGS)}>
@@ -126,6 +137,11 @@ export default function App() {
           <Route
             path="/logistics/vehicle-management"
             element={<VehicleManagement />}
+          />
+
+          <Route
+            path="/logistics/weighment"
+            element={<WeighmentPage />}
           />
 
           <Route

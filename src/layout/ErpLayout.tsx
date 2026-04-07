@@ -9,9 +9,11 @@ import {
   Truck,
   CalendarDays,
   Car,
+  FileText,
   Users,
   Settings,
   Leaf,
+  DollarSign,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -120,7 +122,8 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
               Core
             </div>
             <div className="space-y-1">
-              <Item to="/dashboard" icon={LayoutDashboard} label="Dashboard" collapsed={isSidebarCollapsed} end />
+              <Item to="/financials" icon={DollarSign} label="Project Financials" collapsed={isSidebarCollapsed} />
+              <Item to="/dashboard" icon={LayoutDashboard} label="Collection Dashboard" collapsed={isSidebarCollapsed} end />
             </div>
 
             <div className="mt-6">
@@ -204,6 +207,12 @@ export default function ErpLayout({ company, onReset: _onReset, onLogout }) {
                   to="/logistics/vehicle-management"
                   icon={Car}
                   label="Vehicle management"
+                  collapsed={isSidebarCollapsed}
+                />
+                <Item
+                  to="/logistics/weighment"
+                  icon={FileText}
+                  label="Weighment"
                   collapsed={isSidebarCollapsed}
                 />
               </div>

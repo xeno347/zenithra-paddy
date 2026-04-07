@@ -8,6 +8,7 @@ import {
   getSavedLandClusterConfig,
   landClusterDemoParcels as parcels,
   saveLandClusterConfig,
+  type ClusterAlgorithm,
   type LandParcel,
   type LandStatus,
 } from "./landClusterDemoData";
@@ -44,12 +45,13 @@ export default function LandClusterPage() {
   const initialConfig = React.useMemo(() => getSavedLandClusterConfig(3, 8), []);
   const [clusterCount, setClusterCount] = React.useState(initialConfig.clusterCount);
   const [clusterRadiusKm, setClusterRadiusKm] = React.useState(initialConfig.clusterRadiusKm);
+  const [algorithm, setAlgorithm] = React.useState<ClusterAlgorithm>(initialConfig.algorithm);
   const [lastSavedAt, setLastSavedAt] = React.useState(initialConfig.savedAt);
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const { clusters, outsideRadius, radiusKm } = React.useMemo(
-    () => buildClusters(parcels, clusterCount, clusterRadiusKm),
-    [clusterCount, clusterRadiusKm]
+    () => buildClusters(parcels, clusterCount, clusterRadiusKm, algorithm),
+    [clusterCount, clusterRadiusKm, algorithm]
   );
 
   const filteredClusters = React.useMemo(() => {
@@ -78,7 +80,7 @@ export default function LandClusterPage() {
   const allPoints = parcels.map((p) => p.coordinates);
 
   function handleSaveClusterInfo() {
-    const saved = saveLandClusterConfig(clusterCount, clusterRadiusKm);
+    const saved = saveLandClusterConfig(clusterCount, clusterRadiusKm, algorithm);
     setLastSavedAt(saved.savedAt);
   }
 
@@ -93,7 +95,19 @@ export default function LandClusterPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Algorithm</div>
+              <select
+                value={algorithm}
+                onChange={(e) => setAlgorithm(e.target.value as ClusterAlgorithm)}
+                className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                <option value="kmeans">K-means</option>
+                <option value="density">Density (DBSCAN-like)</option>
+              </select>
+            </label>
+
             <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
               <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Cluster count</div>
               <input
@@ -102,8 +116,12 @@ export default function LandClusterPage() {
                 max={parcels.length}
                 value={clusterCount}
                 onChange={(e) => setClusterCount(clamp(Number(e.target.value) || 1, 1, parcels.length))}
+                disabled={algorithm === "density"}
                 className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-primary/30"
               />
+              <div className="mt-1 text-[10px] text-slate-500">
+                {algorithm === "density" ? "Ignored for density clustering" : "Used only by K-means"}
+              </div>
             </label>
 
             <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -123,7 +141,7 @@ export default function LandClusterPage() {
 
       <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="border-b border-slate-200 bg-slate-100/80 px-4 py-2 text-xs font-semibold text-slate-600">
-          Satellite map overview of all mapped lands and computed clusters
+          Satellite map overview of all mapped lands and computed clusters ({algorithm === "kmeans" ? "K-means" : "Density"})
         </div>
         <MapContainer className="h-[460px] w-full" center={[21.2514, 81.6296]} zoom={11} scrollWheelZoom>
           <TileLayer
